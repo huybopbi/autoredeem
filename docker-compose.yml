@@ -21,9 +21,7 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=False
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       redis:
         condition: service_healthy

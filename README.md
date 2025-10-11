@@ -175,11 +175,35 @@ docker run -p 5000:5000 autoredeem
 cp env.example .env
 
 # Edit configuration
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
+# Option 1: Redis URL (Recommended)
+REDIS_URL=redis://localhost:6379/0
+
+# Option 2: Individual Redis config
+# REDIS_HOST=localhost
+# REDIS_PORT=6379
+# REDIS_DB=0
+
+# Other settings
 FLASK_ENV=production
 SECRET_KEY=your-secret-key-here
+```
+
+### Redis URL Examples
+```bash
+# Local Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Redis with password
+REDIS_URL=redis://:password@localhost:6379/0
+
+# Redis with username and password
+REDIS_URL=redis://username:password@localhost:6379/0
+
+# Cloud Redis (Redis Cloud, AWS ElastiCache, etc.)
+REDIS_URL=redis://user:pass@redis-cloud.com:12345/0
+
+# Redis with SSL
+REDIS_URL=rediss://user:pass@secure-redis.com:6380/0
 ```
 
 ## 📊 Monitoring

@@ -22,12 +22,23 @@ app = Flask(__name__)
 app.secret_key = 'cyborx_redeem_tool_2024_secure_key_for_multi_user'
 
 # Redis configuration
-redis_client = redis.Redis(
-    host=os.getenv('REDIS_HOST', 'localhost'),
-    port=int(os.getenv('REDIS_PORT', 6379)),
-    db=int(os.getenv('REDIS_DB', 0)),
-    decode_responses=True
-)
+def get_redis_client():
+    """Get Redis client from URL or individual config"""
+    redis_url = os.getenv('REDIS_URL')
+    
+    if redis_url:
+        # Use Redis URL (for production/cloud)
+        return redis.from_url(redis_url, decode_responses=True)
+    else:
+        # Use individual config (for local development)
+        return redis.Redis(
+            host=os.getenv('REDIS_HOST', 'localhost'),
+            port=int(os.getenv('REDIS_PORT', 6379)),
+            db=int(os.getenv('REDIS_DB', 0)),
+            decode_responses=True
+        )
+
+redis_client = get_redis_client()
 
 # Flask-Session configuration
 app.config['SESSION_TYPE'] = 'redis'
