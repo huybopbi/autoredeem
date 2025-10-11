@@ -24,25 +24,43 @@ app.secret_key = 'cyborx_redeem_tool_2024_secure_key_for_multi_user'
 # Redis configuration
 def get_redis_client():
     """Get Redis client from URL or individual config"""
-    redis_url = os.getenv('REDIS_URL')
-    
-    if redis_url:
-        # Use Redis URL (for production/cloud)
-        return redis.from_url(redis_url, decode_responses=True)
-    else:
-        # Use individual config (for local development)
-        return redis.Redis(
-            host=os.getenv('REDIS_HOST', 'localhost'),
-            port=int(os.getenv('REDIS_PORT', 6379)),
-            db=int(os.getenv('REDIS_DB', 0)),
-            decode_responses=True
-        )
+    try:
+        redis_url = os.getenv('REDIS_URL')
+        
+        if redis_url:
+            # Use Redis URL (for production/cloud)
+            return redis.from_url(redis_url, decode_responses=True)
+        else:
+            # Use individual config (for local development)
+            return redis.Redis(
+                host=os.getenv('REDIS_HOST', 'localhost'),
+                port=int(os.getenv('REDIS_PORT', 6379)),
+                db=int(os.getenv('REDIS_DB', 0)),
+                decode_responses=True
+            )
+    except Exception as e:
+        print(f"Warning: Redis connection failed: {e}")
+        return None
 
 redis_client = get_redis_client()
 
 # Flask-Session configuration
-app.config['SESSION_TYPE'] = 'redis'
-app.config['SESSION_REDIS'] = redis_client
+if redis_client:
+    try:
+        # Test Redis connection
+        redis_client.ping()
+        app.config['SESSION_TYPE'] = 'redis'
+        app.config['SESSION_REDIS'] = redis_client
+        print("✅ Redis session storage enabled")
+    except Exception as e:
+        print(f"Warning: Redis session failed, using filesystem: {e}")
+        app.config['SESSION_TYPE'] = 'filesystem'
+        app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
+else:
+    print("Warning: No Redis client, using filesystem session")
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
+
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'cyborx:'
@@ -53,18 +71,64 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 Session(app)
 
 def get_user_session():
-    """Get or create user session from Redis"""
+    """Get or create user session from Redis or memory"""
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
         session.permanent = True
     
     user_id = session['user_id']
-    session_key = f"user_session:{user_id}"
     
-    # Check if session exists in Redis
-    if not redis_client.exists(session_key):
-        # Create new session
-        default_session = {
+    if redis_client:
+        try:
+            session_key = f"user_session:{user_id}"
+            
+            # Check if session exists in Redis
+            if not redis_client.exists(session_key):
+                # Create new session
+                default_session = {
+                    'task_results': [],
+                    'task_status': {
+                        'running': False,
+                        'progress': 0,
+                        'total': 0,
+                        'success': 0,
+                        'error': 0,
+                        'current_code': '',
+                        'start_time': None,
+                        'end_time': None
+                    },
+                    'telegram_monitor': None,
+                    'monitor_status': {
+                        'running': False,
+                        'channels': [],
+                        'stats': {},
+                        'start_time': None
+                    },
+                    'data': {
+                        'codes': [],
+                        'cookies': {},
+                        'codes_text': '',
+                        'cookies_text': ''
+                    },
+                    'created_at': datetime.now().isoformat(),
+                    'last_accessed': datetime.now().isoformat()
+                }
+                
+                # Store in Redis with 24 hour expiration
+                redis_client.setex(session_key, 86400, json.dumps(default_session))
+            
+            # Update last accessed time
+            session_data = json.loads(redis_client.get(session_key))
+            session_data['last_accessed'] = datetime.now().isoformat()
+            redis_client.setex(session_key, 86400, json.dumps(session_data))
+            
+            return session_data
+        except Exception as e:
+            print(f"Warning: Redis session failed, using memory: {e}")
+    
+    # Fallback to memory storage
+    if 'user_data' not in session:
+        session['user_data'] = {
             'task_results': [],
             'task_status': {
                 'running': False,
@@ -92,22 +156,23 @@ def get_user_session():
             'created_at': datetime.now().isoformat(),
             'last_accessed': datetime.now().isoformat()
         }
-        
-        # Store in Redis with 24 hour expiration
-        redis_client.setex(session_key, 86400, json.dumps(default_session))
     
     # Update last accessed time
-    session_data = json.loads(redis_client.get(session_key))
-    session_data['last_accessed'] = datetime.now().isoformat()
-    redis_client.setex(session_key, 86400, json.dumps(session_data))
-    
-    return session_data
+    session['user_data']['last_accessed'] = datetime.now().isoformat()
+    return session['user_data']
 
 def save_user_session(user_id, session_data):
-    """Save user session to Redis"""
-    session_key = f"user_session:{user_id}"
-    session_data['last_accessed'] = datetime.now().isoformat()
-    redis_client.setex(session_key, 86400, json.dumps(session_data))
+    """Save user session to Redis or memory"""
+    if redis_client:
+        try:
+            session_key = f"user_session:{user_id}"
+            session_data['last_accessed'] = datetime.now().isoformat()
+            redis_client.setex(session_key, 86400, json.dumps(session_data))
+        except Exception as e:
+            print(f"Warning: Redis save failed: {e}")
+    else:
+        # Fallback to memory storage
+        session['user_data'] = session_data
 
 def parse_codes_from_text(text):
     """Parse codes from text input"""
@@ -278,13 +343,17 @@ def health_check():
         }
         
         # Try Redis connection but don't fail if it's not available
-        try:
-            redis_client.ping()
-            health_info['redis'] = 'connected'
-            health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
-        except Exception as redis_error:
-            health_info['redis'] = 'disconnected'
-            health_info['redis_error'] = str(redis_error)
+        if redis_client:
+            try:
+                redis_client.ping()
+                health_info['redis'] = 'connected'
+                health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
+            except Exception as redis_error:
+                health_info['redis'] = 'disconnected'
+                health_info['redis_error'] = str(redis_error)
+                health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
+        else:
+            health_info['redis'] = 'not_configured'
             health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
         
         return jsonify(health_info), 200
@@ -692,18 +761,21 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     
     # Test Redis connection
-    try:
-        redis_client.ping()
-        print("✅ Redis connection successful")
-    except Exception as e:
-        print(f"❌ Redis connection failed: {str(e)}")
-        print("Please make sure Redis is running on localhost:6379")
-        exit(1)
+    if redis_client:
+        try:
+            redis_client.ping()
+            print("✅ Redis connection successful")
+            print("💾 Data stored in Redis - scalable and persistent")
+        except Exception as e:
+            print(f"⚠️ Redis connection failed: {str(e)}")
+            print("🔄 Using filesystem session storage as fallback")
+    else:
+        print("⚠️ Redis not configured")
+        print("🔄 Using filesystem session storage")
     
-    print("🚀 Starting CyborX Redeem Tool Web App (Multi-User + Redis)...")
+    print("🚀 Starting CyborX Redeem Tool Web App...")
     print("🌐 Open your browser and go to: http://localhost:5000")
     print("👥 Multi-user support enabled - each user has isolated session")
-    print("💾 Data stored in Redis - scalable and persistent")
     print("🔄 Session auto-expires after 24 hours")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
