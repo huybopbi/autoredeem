@@ -481,8 +481,11 @@
 
             <!-- Results Section -->
             <div class="card mt-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-list"></i> Results</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Results</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="updateResults()">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                    </button>
                 </div>
                 <div class="card-body">
                     <div id="resultsContainer">
@@ -708,9 +711,14 @@
 
         // Update results
         function updateResults() {
+            console.log('Fetching results...');
             fetch('/results')
-            .then(response => response.json())
+            .then(response => {
+                console.log('Results response:', response);
+                return response.json();
+            })
             .then(data => {
+                console.log('Results data:', data);
                 if (data.length > 0) {
                     let html = '';
                     data.forEach(result => {
@@ -726,12 +734,15 @@
                                     </div>
                                 </div>
                                 <div class="mt-1">
-                                    <small class="text-muted">${result.response}</small>
+                                    <small class="text-muted">${result.result}</small>
                                 </div>
                             </div>
                         `;
                     });
                     document.getElementById('resultsContainer').innerHTML = html;
+                } else {
+                    document.getElementById('resultsContainer').innerHTML = 
+                        '<p class="text-muted text-center">No results yet. Start the redeem process to see results here.</p>';
                 }
             })
             .catch(error => {
