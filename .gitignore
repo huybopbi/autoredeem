@@ -62,3 +62,6 @@ monitor_config.json
 # Temporary files
 *.tmp
 *.temp
+
+# Test files
+test_redis.py

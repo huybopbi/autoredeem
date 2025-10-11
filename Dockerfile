@@ -20,12 +20,13 @@ COPY . .
 # Create user files directory
 RUN mkdir -p user_files
 
-# Expose port
-EXPOSE 5000
-
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
+ENV PORT=5000
+
+# Expose port
+EXPOSE $PORT
 
 # Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT --workers 4 app:app"]
