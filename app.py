@@ -5,6 +5,7 @@ Flask web application for automatic code redemption
 """
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask_session import Session
 import os
 import threading
 import time
@@ -12,24 +13,47 @@ import json
 import asyncio
 import uuid
 import shutil
-from datetime import datetime
+import redis
+from datetime import datetime, timedelta
 from redeem_tool import CyborXRedeemTool
 from telegram_monitor import TelegramMonitor
 
 app = Flask(__name__)
 app.secret_key = 'cyborx_redeem_tool_2024_secure_key_for_multi_user'
 
-# User sessions storage
-user_sessions = {}
+# Redis configuration
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'),
+    port=int(os.getenv('REDIS_PORT', 6379)),
+    db=int(os.getenv('REDIS_DB', 0)),
+    decode_responses=True
+)
+
+# Flask-Session configuration
+app.config['SESSION_TYPE'] = 'redis'
+app.config['SESSION_REDIS'] = redis_client
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'cyborx:'
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+Session(app)
 
 def get_user_session():
-    """Get or create user session"""
+    """Get or create user session from Redis"""
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
+        session.permanent = True
     
     user_id = session['user_id']
-    if user_id not in user_sessions:
-        user_sessions[user_id] = {
+    session_key = f"user_session:{user_id}"
+    
+    # Check if session exists in Redis
+    if not redis_client.exists(session_key):
+        # Create new session
+        default_session = {
             'task_results': [],
             'task_status': {
                 'running': False,
@@ -53,10 +77,26 @@ def get_user_session():
                 'cookies': {},
                 'codes_text': '',
                 'cookies_text': ''
-            }
+            },
+            'created_at': datetime.now().isoformat(),
+            'last_accessed': datetime.now().isoformat()
         }
+        
+        # Store in Redis with 24 hour expiration
+        redis_client.setex(session_key, 86400, json.dumps(default_session))
     
-    return user_sessions[user_id]
+    # Update last accessed time
+    session_data = json.loads(redis_client.get(session_key))
+    session_data['last_accessed'] = datetime.now().isoformat()
+    redis_client.setex(session_key, 86400, json.dumps(session_data))
+    
+    return session_data
+
+def save_user_session(user_id, session_data):
+    """Save user session to Redis"""
+    session_key = f"user_session:{user_id}"
+    session_data['last_accessed'] = datetime.now().isoformat()
+    redis_client.setex(session_key, 86400, json.dumps(session_data))
 
 def parse_codes_from_text(text):
     """Parse codes from text input"""
@@ -147,9 +187,13 @@ class WebRedeemTool(CyborXRedeemTool):
         """Load cookies from user session"""
         return user_session['data']['cookies']
 
-def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_session=None):
+def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_id=None):
     """Run redeem task in background thread"""
     try:
+        # Get session from Redis
+        session_key = f"user_session:{user_id}"
+        user_session = json.loads(redis_client.get(session_key))
+        
         user_session['task_status']['running'] = True
         user_session['task_status']['start_time'] = datetime.now().strftime('%H:%M:%S')
         user_session['task_status']['progress'] = 0
@@ -157,12 +201,18 @@ def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_session=N
         user_session['task_status']['error'] = 0
         user_session['task_results'].clear()
         
+        # Save initial state
+        save_user_session(user_id, user_session)
+        
         # Create tool instance
         tool = WebRedeemTool(cookies, user_session)
         
         # Set callback for progress updates
         def progress_callback(data):
-            user_session['task_status'].update(data)
+            # Get fresh session data
+            current_session = json.loads(redis_client.get(session_key))
+            current_session['task_status'].update(data)
+            save_user_session(user_id, current_session)
         
         tool.set_web_callback(progress_callback)
         
@@ -172,12 +222,28 @@ def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_session=N
         else:
             tool.run_multi_thread(codes, max_workers)
         
-        user_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
+        # Update final state
+        final_session = json.loads(redis_client.get(session_key))
+        final_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
+        save_user_session(user_id, final_session)
         
     except Exception as e:
         print(f"Error in redeem task: {str(e)}")
+        # Update error state
+        try:
+            error_session = json.loads(redis_client.get(session_key))
+            error_session['task_status']['running'] = False
+            save_user_session(user_id, error_session)
+        except:
+            pass
     finally:
-        user_session['task_status']['running'] = False
+        # Ensure running is set to False
+        try:
+            final_session = json.loads(redis_client.get(session_key))
+            final_session['task_status']['running'] = False
+            save_user_session(user_id, final_session)
+        except:
+            pass
 
 @app.route('/')
 def index():
@@ -189,6 +255,7 @@ def upload_files():
     """Handle file uploads"""
     try:
         user_session = get_user_session()
+        user_id = session['user_id']
         
         # Handle codes file
         if 'codes_file' in request.files:
@@ -198,6 +265,7 @@ def upload_files():
                 codes = parse_codes_from_text(codes_text)
                 user_session['data']['codes'] = codes
                 user_session['data']['codes_text'] = codes_text
+                save_user_session(user_id, user_session)
                 flash(f'Codes file uploaded successfully! ({len(codes)} codes loaded)', 'success')
         
         # Handle cookies file
@@ -208,6 +276,7 @@ def upload_files():
                 cookies = parse_cookies_from_text(cookies_text)
                 user_session['data']['cookies'] = cookies
                 user_session['data']['cookies_text'] = cookies_text
+                save_user_session(user_id, user_session)
                 flash(f'Cookies file uploaded successfully! ({len(cookies)} cookies loaded)', 'success')
         
         # Handle manual codes input
@@ -216,6 +285,7 @@ def upload_files():
             codes = parse_codes_from_text(codes_text)
             user_session['data']['codes'] = codes
             user_session['data']['codes_text'] = codes_text
+            save_user_session(user_id, user_session)
             flash(f'Codes saved successfully! ({len(codes)} codes loaded)', 'success')
         
         # Handle manual cookies input
@@ -224,6 +294,7 @@ def upload_files():
             cookies = parse_cookies_from_text(cookies_text)
             user_session['data']['cookies'] = cookies
             user_session['data']['cookies_text'] = cookies_text
+            save_user_session(user_id, user_session)
             flash(f'Cookies saved successfully! ({len(cookies)} cookies loaded)', 'success')
         
     except Exception as e:
@@ -257,7 +328,7 @@ def start_redeem():
         # Start background task
         task_thread = threading.Thread(
             target=run_redeem_task,
-            args=(codes, cookies, mode, max_workers, user_session)
+            args=(codes, cookies, mode, max_workers, user_id)
         )
         task_thread.daemon = True
         task_thread.start()
@@ -504,26 +575,13 @@ def remove_channel(username):
 def cleanup_user_session():
     """Cleanup user session data"""
     try:
-        user_session = get_user_session()
+        user_id = session.get('user_id')
+        if user_id:
+            # Delete session from Redis
+            session_key = f"user_session:{user_id}"
+            redis_client.delete(session_key)
         
-        # Clear session data
-        user_session['data']['codes'] = []
-        user_session['data']['cookies'] = {}
-        user_session['data']['codes_text'] = ''
-        user_session['data']['cookies_text'] = ''
-        user_session['task_results'] = []
-        user_session['task_status'].update({
-            'running': False,
-            'progress': 0,
-            'total': 0,
-            'success': 0,
-            'error': 0,
-            'current_code': '',
-            'start_time': None,
-            'end_time': None
-        })
-        
-        # Clear session
+        # Clear Flask session
         session.clear()
         
         return jsonify({'message': 'Session cleaned up successfully!'})
@@ -532,22 +590,44 @@ def cleanup_user_session():
         return jsonify({'error': str(e)}), 500
 
 def cleanup_old_sessions():
-    """Cleanup old user sessions and files"""
-    import time
-    current_time = time.time()
-    
-    # Cleanup sessions older than 24 hours
-    for user_id in list(user_sessions.keys()):
-        # This is a simple cleanup - in production you'd want more sophisticated session management
-        pass
+    """Cleanup old user sessions from Redis"""
+    try:
+        # Get all session keys
+        session_keys = redis_client.keys("user_session:*")
+        
+        for key in session_keys:
+            try:
+                session_data = json.loads(redis_client.get(key))
+                last_accessed = datetime.fromisoformat(session_data.get('last_accessed', '1970-01-01T00:00:00'))
+                
+                # Delete sessions older than 24 hours
+                if datetime.now() - last_accessed > timedelta(hours=24):
+                    redis_client.delete(key)
+                    print(f"Cleaned up old session: {key}")
+                    
+            except Exception as e:
+                print(f"Error cleaning session {key}: {str(e)}")
+                
+    except Exception as e:
+        print(f"Error in cleanup_old_sessions: {str(e)}")
 
 if __name__ == '__main__':
     # Create directories
     os.makedirs('templates', exist_ok=True)
     
-    print("🚀 Starting CyborX Redeem Tool Web App (Multi-User)...")
+    # Test Redis connection
+    try:
+        redis_client.ping()
+        print("✅ Redis connection successful")
+    except Exception as e:
+        print(f"❌ Redis connection failed: {str(e)}")
+        print("Please make sure Redis is running on localhost:6379")
+        exit(1)
+    
+    print("🚀 Starting CyborX Redeem Tool Web App (Multi-User + Redis)...")
     print("🌐 Open your browser and go to: http://localhost:5000")
     print("👥 Multi-user support enabled - each user has isolated session")
-    print("💾 Data stored in memory only - no files created on disk")
+    print("💾 Data stored in Redis - scalable and persistent")
+    print("🔄 Session auto-expires after 24 hours")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

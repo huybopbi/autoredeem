@@ -28,12 +28,23 @@ cd autoredeem
 pip install -r requirements.txt
 ```
 
-### 2. Run Web App
+### 2. Start Redis
+```bash
+# Using Docker
+docker run -d -p 6379:6379 redis:7-alpine
+
+# Or install Redis locally
+# Ubuntu/Debian: sudo apt install redis-server
+# macOS: brew install redis
+# Windows: Download from https://redis.io/download
+```
+
+### 3. Run Web App
 ```bash
 python app.py
 ```
 
-### 3. Access Web Interface
+### 4. Access Web Interface
 Open your browser and go to: `http://localhost:5000`
 
 ## 📖 Usage Guide
@@ -103,22 +114,24 @@ autoredeem/
 
 ### Session Management
 - Each user gets unique session ID
-- Data stored in memory only (no files on disk)
+- Data stored in Redis (scalable and persistent)
 - Complete isolation between users
-- Session cleanup functionality
-- Auto-cleanup when session ends
+- Session auto-expires after 24 hours
+- Redis-based session management
 
 ### Data Storage
 ```
-Memory Storage (No Files):
-├── User Session 1
+Redis Storage:
+├── user_session:{user_id_1}
 │   ├── codes: ["CYBORX-1234-5678-PREMIUM", ...]
 │   ├── cookies: {"CYBORXSESSID": "value", ...}
-│   └── task_results: [...]
-└── User Session 2
+│   ├── task_results: [...]
+│   └── created_at: "2024-01-01T00:00:00"
+└── user_session:{user_id_2}
     ├── codes: ["CYBORX-ABCD-EFGH-CREDITS", ...]
     ├── cookies: {"CYBORXSESSID": "value", ...}
-    └── task_results: [...]
+    ├── task_results: [...]
+    └── created_at: "2024-01-01T00:00:00"
 ```
 
 ## 🎯 Telegram Integration
@@ -144,6 +157,9 @@ python app.py
 
 ### Production Deployment
 ```bash
+# Using Docker Compose (Recommended)
+docker-compose up -d
+
 # Using Gunicorn
 pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
@@ -151,6 +167,19 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 # Using Docker
 docker build -t autoredeem .
 docker run -p 5000:5000 autoredeem
+```
+
+### Environment Variables
+```bash
+# Copy example environment file
+cp env.example .env
+
+# Edit configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+FLASK_ENV=production
+SECRET_KEY=your-secret-key-here
 ```
 
 ## 📊 Monitoring
