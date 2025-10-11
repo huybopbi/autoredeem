@@ -49,6 +49,11 @@ user_files/
 *.log
 *.session
 
+# Environment files
+.env
+.env.local
+.env.production
+
 # Temporary session data (not used anymore)
 codes.txt
 cookies.txt

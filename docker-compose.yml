@@ -21,13 +21,14 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=False
-      - REDIS_URL=redis://redis:6379/0
+      # REDIS_URL will be set by Railway Variables, not here
+      # For local development, use: REDIS_URL=redis://redis:6379/0
     depends_on:
       redis:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
