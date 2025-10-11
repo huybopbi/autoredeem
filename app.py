@@ -261,14 +261,51 @@ def index():
     """Main page"""
     return render_template('index.html')
 
+@app.route('/ping')
+def ping():
+    """Simple ping endpoint for healthcheck"""
+    return "pong", 200
+
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
     try:
+        # Simple health check without Redis dependency
+        health_info = {
+            'status': 'healthy',
+            'app': 'running',
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Try Redis connection but don't fail if it's not available
+        try:
+            redis_client.ping()
+            health_info['redis'] = 'connected'
+            health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
+        except Exception as redis_error:
+            health_info['redis'] = 'disconnected'
+            health_info['redis_error'] = str(redis_error)
+            health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
+        
+        return jsonify(health_info), 200
+        
+    except Exception as e:
+        error_info = {
+            'status': 'unhealthy',
+            'app': 'error',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(error_info), 503
+
+@app.route('/health/redis')
+def health_check_redis():
+    """Redis-specific health check endpoint"""
+    try:
         # Test Redis connection
         redis_client.ping()
         
-        # Get Redis info
         redis_info = {
             'status': 'healthy',
             'redis': 'connected',
