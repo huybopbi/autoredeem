@@ -6,6 +6,8 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
+    redis-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -20,6 +22,9 @@ COPY . .
 # Create user files directory
 RUN mkdir -p user_files
 
+# Make startup script executable
+RUN chmod +x start.sh
+
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
@@ -28,5 +33,9 @@ ENV PORT=5000
 # Expose port
 EXPOSE 5000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5000/ || exit 1
+
 # Run the application
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 app:app"]
+CMD ["./start.sh"]

@@ -261,6 +261,25 @@ def index():
     """Main page"""
     return render_template('index.html')
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    try:
+        # Test Redis connection
+        redis_client.ping()
+        return jsonify({
+            'status': 'healthy',
+            'redis': 'connected',
+            'timestamp': datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'redis': 'disconnected',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 503
+
 @app.route('/upload', methods=['POST'])
 def upload_files():
     """Handle file uploads"""
