@@ -122,8 +122,12 @@ REDIS_URL=redis://default:password@redis.railway.internal:6379
 
 #### **3. Port binding error**
 ```bash
-# Use $PORT environment variable
-gunicorn --bind 0.0.0.0:$PORT --workers 4 app:app
+# Error: '$PORT' is not a valid port number
+# Solution: Use fixed port 5000
+gunicorn --bind 0.0.0.0:5000 --workers 4 app:app
+
+# Or use fallback syntax
+gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 app:app
 ```
 
 #### **4. Build timeout**
