@@ -48,23 +48,46 @@ def get_user_session():
                 'stats': {},
                 'start_time': None
             },
-            'files': {
-                'codes_file': None,
-                'cookies_file': None
+            'data': {
+                'codes': [],
+                'cookies': {},
+                'codes_text': '',
+                'cookies_text': ''
             }
         }
     
     return user_sessions[user_id]
 
-def get_user_files_dir():
-    """Get user-specific files directory"""
-    user_id = session.get('user_id')
-    if not user_id:
-        return None
+def parse_codes_from_text(text):
+    """Parse codes from text input"""
+    if not text:
+        return []
     
-    user_dir = f"user_files/{user_id}"
-    os.makedirs(user_dir, exist_ok=True)
-    return user_dir
+    codes = []
+    for line in text.strip().split('\n'):
+        line = line.strip()
+        if line and not line.startswith('#'):
+            codes.append(line)
+    
+    return codes
+
+def parse_cookies_from_text(text):
+    """Parse cookies from text input"""
+    if not text:
+        return {}
+    
+    cookies = {}
+    for line in text.strip().split('\n'):
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            parts = line.split(';')
+            for part in parts:
+                part = part.strip()
+                if '=' in part:
+                    name, value = part.split('=', 1)
+                    cookies[name.strip()] = value.strip()
+    
+    return cookies
 
 class WebRedeemTool(CyborXRedeemTool):
     """Extended redeem tool for web interface"""
@@ -116,13 +139,13 @@ class WebRedeemTool(CyborXRedeemTool):
         
         return result
     
-    def load_codes_from_file(self, filename):
-        """Load codes from user-specific file"""
-        return super().load_codes_from_file(filename)
+    def load_codes_from_session(self, user_session):
+        """Load codes from user session"""
+        return user_session['data']['codes']
     
-    def load_cookies_from_file(self, filename):
-        """Load cookies from user-specific file"""
-        return super().load_cookies_from_file(filename)
+    def load_cookies_from_session(self, user_session):
+        """Load cookies from user session"""
+        return user_session['data']['cookies']
 
 def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_session=None):
     """Run redeem task in background thread"""
@@ -166,47 +189,42 @@ def upload_files():
     """Handle file uploads"""
     try:
         user_session = get_user_session()
-        user_dir = get_user_files_dir()
-        
-        if not user_dir:
-            flash('Session error. Please refresh the page.', 'error')
-            return redirect(url_for('index'))
         
         # Handle codes file
         if 'codes_file' in request.files:
             codes_file = request.files['codes_file']
             if codes_file.filename:
-                codes_path = os.path.join(user_dir, 'codes.txt')
-                codes_file.save(codes_path)
-                user_session['files']['codes_file'] = codes_path
-                flash('Codes file uploaded successfully!', 'success')
+                codes_text = codes_file.read().decode('utf-8')
+                codes = parse_codes_from_text(codes_text)
+                user_session['data']['codes'] = codes
+                user_session['data']['codes_text'] = codes_text
+                flash(f'Codes file uploaded successfully! ({len(codes)} codes loaded)', 'success')
         
         # Handle cookies file
         if 'cookies_file' in request.files:
             cookies_file = request.files['cookies_file']
             if cookies_file.filename:
-                cookies_path = os.path.join(user_dir, 'cookies.txt')
-                cookies_file.save(cookies_path)
-                user_session['files']['cookies_file'] = cookies_path
-                flash('Cookies file uploaded successfully!', 'success')
+                cookies_text = cookies_file.read().decode('utf-8')
+                cookies = parse_cookies_from_text(cookies_text)
+                user_session['data']['cookies'] = cookies
+                user_session['data']['cookies_text'] = cookies_text
+                flash(f'Cookies file uploaded successfully! ({len(cookies)} cookies loaded)', 'success')
         
         # Handle manual codes input
         if 'codes_text' in request.form and request.form['codes_text']:
             codes_text = request.form['codes_text']
-            codes_path = os.path.join(user_dir, 'codes.txt')
-            with open(codes_path, 'w', encoding='utf-8') as f:
-                f.write(codes_text)
-            user_session['files']['codes_file'] = codes_path
-            flash('Codes saved successfully!', 'success')
+            codes = parse_codes_from_text(codes_text)
+            user_session['data']['codes'] = codes
+            user_session['data']['codes_text'] = codes_text
+            flash(f'Codes saved successfully! ({len(codes)} codes loaded)', 'success')
         
         # Handle manual cookies input
         if 'cookies_text' in request.form and request.form['cookies_text']:
             cookies_text = request.form['cookies_text']
-            cookies_path = os.path.join(user_dir, 'cookies.txt')
-            with open(cookies_path, 'w', encoding='utf-8') as f:
-                f.write(cookies_text)
-            user_session['files']['cookies_file'] = cookies_path
-            flash('Cookies saved successfully!', 'success')
+            cookies = parse_cookies_from_text(cookies_text)
+            user_session['data']['cookies'] = cookies
+            user_session['data']['cookies_text'] = cookies_text
+            flash(f'Cookies saved successfully! ({len(cookies)} cookies loaded)', 'success')
         
     except Exception as e:
         flash(f'Error uploading files: {str(e)}', 'error')
@@ -222,23 +240,13 @@ def start_redeem():
         return jsonify({'error': 'Task is already running'}), 400
     
     try:
-        # Load codes from user's file
-        codes_path = user_session['files'].get('codes_file')
-        if not codes_path or not os.path.exists(codes_path):
-            return jsonify({'error': 'No codes found. Please upload codes first.'}), 400
-        
-        tool = WebRedeemTool()
-        codes = tool.load_codes_from_file(codes_path)
-        
+        # Load codes from user session
+        codes = user_session['data']['codes']
         if not codes:
             return jsonify({'error': 'No codes found. Please upload codes first.'}), 400
         
-        # Load cookies from user's file
-        cookies_path = user_session['files'].get('cookies_file')
-        if not cookies_path or not os.path.exists(cookies_path):
-            return jsonify({'error': 'No cookies found. Please upload cookies first.'}), 400
-        
-        cookies = tool.load_cookies_from_file(cookies_path)
+        # Load cookies from user session
+        cookies = user_session['data']['cookies']
         if not cookies:
             return jsonify({'error': 'No cookies found. Please upload cookies first.'}), 400
         
@@ -276,22 +284,12 @@ def get_codes():
     """Get current codes"""
     try:
         user_session = get_user_session()
-        codes_path = user_session['files'].get('codes_file')
-        
-        if not codes_path or not os.path.exists(codes_path):
-            return jsonify({
-                'codes': [],
-                'count': 0,
-                'filename': 'No file uploaded'
-            })
-        
-        tool = CyborXRedeemTool()
-        codes = tool.load_codes_from_file(codes_path)
+        codes = user_session['data']['codes']
         
         return jsonify({
             'codes': codes,
             'count': len(codes),
-            'filename': os.path.basename(codes_path)
+            'filename': 'Session Data' if codes else 'No data'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -301,17 +299,7 @@ def get_cookies():
     """Get current cookies info"""
     try:
         user_session = get_user_session()
-        cookies_path = user_session['files'].get('cookies_file')
-        
-        if not cookies_path or not os.path.exists(cookies_path):
-            return jsonify({
-                'cookies': {},
-                'count': 0,
-                'filename': 'No file uploaded'
-            })
-        
-        tool = CyborXRedeemTool()
-        cookies = tool.load_cookies_from_file(cookies_path)
+        cookies = user_session['data']['cookies']
         
         # Mask sensitive cookie values
         masked_cookies = {}
@@ -324,7 +312,7 @@ def get_cookies():
         return jsonify({
             'cookies': masked_cookies,
             'count': len(cookies),
-            'filename': os.path.basename(cookies_path)
+            'filename': 'Session Data' if cookies else 'No data'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -513,15 +501,27 @@ def remove_channel(username):
         return jsonify({'error': str(e)}), 500
 
 @app.route('/cleanup', methods=['POST'])
-def cleanup_user_files():
-    """Cleanup user files when session ends"""
+def cleanup_user_session():
+    """Cleanup user session data"""
     try:
         user_session = get_user_session()
-        user_dir = get_user_files_dir()
         
-        if user_dir and os.path.exists(user_dir):
-            shutil.rmtree(user_dir)
-            flash('Files cleaned up successfully!', 'success')
+        # Clear session data
+        user_session['data']['codes'] = []
+        user_session['data']['cookies'] = {}
+        user_session['data']['codes_text'] = ''
+        user_session['data']['cookies_text'] = ''
+        user_session['task_results'] = []
+        user_session['task_status'].update({
+            'running': False,
+            'progress': 0,
+            'total': 0,
+            'success': 0,
+            'error': 0,
+            'current_code': '',
+            'start_time': None,
+            'end_time': None
+        })
         
         # Clear session
         session.clear()
@@ -544,10 +544,10 @@ def cleanup_old_sessions():
 if __name__ == '__main__':
     # Create directories
     os.makedirs('templates', exist_ok=True)
-    os.makedirs('user_files', exist_ok=True)
     
     print("🚀 Starting CyborX Redeem Tool Web App (Multi-User)...")
     print("🌐 Open your browser and go to: http://localhost:5000")
     print("👥 Multi-user support enabled - each user has isolated session")
+    print("💾 Data stored in memory only - no files created on disk")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

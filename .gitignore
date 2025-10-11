@@ -49,6 +49,11 @@ user_files/
 *.log
 *.session
 
+# Temporary session data (not used anymore)
+codes.txt
+cookies.txt
+monitor_config.json
+
 # Config files with sensitive data
 cookies.txt
 codes.txt

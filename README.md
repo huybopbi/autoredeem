@@ -93,30 +93,32 @@ autoredeem/
 ## 🔐 Security Features
 
 - **Session Isolation** - Each user has separate session
-- **File Separation** - User files stored in isolated directories
+- **Memory Storage** - Data stored in memory only, no files on disk
 - **Cookie Masking** - Sensitive data is masked in UI
 - **Input Validation** - All inputs are validated
 - **Error Handling** - Comprehensive error handling
+- **Auto Cleanup** - Session data automatically cleared
 
 ## 📱 Multi-User Support
 
 ### Session Management
 - Each user gets unique session ID
-- Files stored in `user_files/{user_id}/`
+- Data stored in memory only (no files on disk)
 - Complete isolation between users
 - Session cleanup functionality
+- Auto-cleanup when session ends
 
-### File Structure
+### Data Storage
 ```
-user_files/
-├── {user_id_1}/
-│   ├── codes.txt
-│   ├── cookies.txt
-│   └── monitor_config.json
-└── {user_id_2}/
-    ├── codes.txt
-    ├── cookies.txt
-    └── monitor_config.json
+Memory Storage (No Files):
+├── User Session 1
+│   ├── codes: ["CYBORX-1234-5678-PREMIUM", ...]
+│   ├── cookies: {"CYBORXSESSID": "value", ...}
+│   └── task_results: [...]
+└── User Session 2
+    ├── codes: ["CYBORX-ABCD-EFGH-CREDITS", ...]
+    ├── cookies: {"CYBORXSESSID": "value", ...}
+    └── task_results: [...]
 ```
 
 ## 🎯 Telegram Integration
