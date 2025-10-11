@@ -267,18 +267,27 @@ def health_check():
     try:
         # Test Redis connection
         redis_client.ping()
-        return jsonify({
+        
+        # Get Redis info
+        redis_info = {
             'status': 'healthy',
             'redis': 'connected',
+            'redis_url': os.getenv('REDIS_URL', 'Not set'),
             'timestamp': datetime.now().isoformat()
-        }), 200
+        }
+        
+        return jsonify(redis_info), 200
+        
     except Exception as e:
-        return jsonify({
+        error_info = {
             'status': 'unhealthy',
             'redis': 'disconnected',
+            'redis_url': os.getenv('REDIS_URL', 'Not set'),
             'error': str(e),
             'timestamp': datetime.now().isoformat()
-        }), 503
+        }
+        
+        return jsonify(error_info), 503
 
 @app.route('/upload', methods=['POST'])
 def upload_files():
