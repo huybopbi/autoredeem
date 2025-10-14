@@ -55,6 +55,12 @@ session_data/
 !codes.example.txt
 !cookies.example.txt
 
+# Keep deployment files
+!wsgi.py
+!cyborx-redeem.service
+!deploy.sh
+!VPS_DEPLOYMENT.md
+
 # Environment variables
 .env
 .env.local

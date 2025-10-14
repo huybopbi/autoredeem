@@ -16,17 +16,18 @@ from datetime import datetime, timedelta
 from redeem_tool import CyborXRedeemTool
 
 app = Flask(__name__)
-app.secret_key = 'cyborx_redeem_tool_2024_secure_key_for_multi_user'
+app.secret_key = os.environ.get('SECRET_KEY', 'cyborx_redeem_tool_2024_secure_key_for_multi_user')
 
-# Simple session configuration
+# Production-ready session configuration
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
+app.config['SESSION_FILE_DIR'] = os.environ.get('SESSION_DIR', '/tmp/flask_session')
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'cyborx:'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_FILE_THRESHOLD'] = 500
 
 Session(app)
 
@@ -548,9 +549,20 @@ if __name__ == '__main__':
     # Create directories
     os.makedirs('templates', exist_ok=True)
     
-    print("[START] Starting CyborX Redeem Tool Web App...")
-    print("[URL] Open your browser and go to: http://localhost:5000")
-    print("[INFO] Simple mode - using filesystem session storage")
-    print("[INFO] Multi-user support enabled - each user has isolated session")
+    # Production configuration
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', 5000))
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("[START] Starting CyborX Redeem Tool Web App...")
+    print(f"[URL] Open your browser and go to: http://{host}:{port}")
+    print("[INFO] Production mode - using filesystem session storage")
+    print("[INFO] Multi-user support enabled - each user has isolated session")
+    print(f"[INFO] Debug mode: {debug_mode}")
+    print(f"[INFO] Environment: {os.environ.get('FLASK_ENV', 'development')}")
+    
+    # Create session directory if it doesn't exist
+    session_dir = app.config['SESSION_FILE_DIR']
+    os.makedirs(session_dir, exist_ok=True)
+    
+    app.run(debug=debug_mode, host=host, port=port)
