@@ -135,41 +135,41 @@ class WebRedeemTool(CyborXRedeemTool):
         
         result = super().redeem_code(code, code_number)
         
-        # Add to results
-        if self.user_session:
-            if result:
-                # Parse response to determine success
-                response_text = result['response']
-                is_success = False
-                
-                try:
-                    import json
-                    response_json = json.loads(response_text)
-                    is_success = response_json.get("ok") == True
-                except json.JSONDecodeError:
-                    # Fallback to text-based detection
-                    is_success = "success" in response_text.lower() or "redeemed" in response_text.lower()
-                
-                result_data = {
-                    'code': code,
-                    'status': 'success' if is_success else 'error',
-                    'response': result['response'],
-                    'timestamp': datetime.now().strftime('%H:%M:%S')
-                }
-                
-                self.user_session['task_results'].append(result_data)
-                
-                # Dừng task nếu thành công
-                if is_success:
-                    self.user_session['task_status']['running'] = False
-                    self.user_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
-            else:
-                self.user_session['task_results'].append({
-                    'code': code,
-                    'status': 'error',
-                    'response': 'Request failed',
-                    'timestamp': datetime.now().strftime('%H:%M:%S')
-                })
+        # Add to results (don't duplicate counting - let parent class handle it)
+        if self.user_session and result:
+            # Parse response to determine success
+            response_text = result['response']
+            is_success = False
+            
+            try:
+                import json
+                response_json = json.loads(response_text)
+                is_success = response_json.get("ok") == True
+            except json.JSONDecodeError:
+                # Fallback to text-based detection
+                is_success = "success" in response_text.lower() or "redeemed" in response_text.lower()
+            
+            result_data = {
+                'code': code,
+                'status': 'success' if is_success else 'error',
+                'response': result['response'],
+                'timestamp': datetime.now().strftime('%H:%M:%S')
+            }
+            
+            self.user_session['task_results'].append(result_data)
+            
+            # Dừng task nếu thành công
+            if is_success:
+                self.user_session['task_status']['running'] = False
+                self.user_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
+        elif self.user_session and not result:
+            # Request failed
+            self.user_session['task_results'].append({
+                'code': code,
+                'status': 'error',
+                'response': 'Request failed',
+                'timestamp': datetime.now().strftime('%H:%M:%S')
+            })
         
         return result
     
@@ -211,10 +211,17 @@ def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_id=None):
         # Set callback for progress updates
         def progress_callback(data):
             try:
-                # Update the global task data
+                # Update the global task data with current counters
                 if user_id in global_task_data:
-                    global_task_data[user_id]['task_status'].update(data)
-                    print(f"[DEBUG] Progress updated: {data}")
+                    # Get current counters from the tool
+                    current_data = {
+                        'progress': tool.processed_count,
+                        'total': tool.total_codes,
+                        'success': tool.success_count,
+                        'error': tool.error_count
+                    }
+                    global_task_data[user_id]['task_status'].update(current_data)
+                    print(f"[DEBUG] Progress updated: {current_data}")
             except Exception as e:
                 print(f"Warning: Progress callback failed: {e}")
         
@@ -231,10 +238,19 @@ def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_id=None):
         
         print(f"[DEBUG] Redeem process completed")
         
-        # Update final state
+        # Update final state with final counters
         if user_id in global_task_data:
-            global_task_data[user_id]['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
-            global_task_data[user_id]['task_status']['running'] = False
+            # Final update with actual counters
+            final_data = {
+                'progress': tool.processed_count,
+                'total': tool.total_codes,
+                'success': tool.success_count,
+                'error': tool.error_count,
+                'end_time': datetime.now().strftime('%H:%M:%S'),
+                'running': False
+            }
+            global_task_data[user_id]['task_status'].update(final_data)
+            print(f"[DEBUG] Final state updated: {final_data}")
         
     except Exception as e:
         print(f"Error in redeem task: {str(e)}")
