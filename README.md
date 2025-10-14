@@ -77,9 +77,7 @@ autoredeem/
 ├── codes.example.txt       # Example codes file
 ├── cookies.example.txt     # Example cookies file
 ├── Procfile                # Railway deployment
-├── railway.json            # Railway configuration
-├── Dockerfile              # Docker configuration
-├── nixpacks.toml           # Railway build config
+├── runtime.txt             # Python version
 ├── cyborx-redeem.service   # Systemd service
 ├── deploy.sh               # VPS deployment script
 ├── VPS_DEPLOYMENT.md       # VPS deployment guide

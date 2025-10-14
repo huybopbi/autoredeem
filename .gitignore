@@ -62,9 +62,7 @@ session_data/
 !VPS_DEPLOYMENT.md
 !RAILWAY_DEPLOYMENT.md
 !Procfile
-!railway.json
-!Dockerfile
-!nixpacks.toml
+!runtime.txt
 
 # Environment variables
 .env

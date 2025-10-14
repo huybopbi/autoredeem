@@ -58,40 +58,15 @@ Hướng dẫn deploy CyborX Redeem Tool lên Railway (free hosting platform).
 
 ### Procfile
 ```
-web: gunicorn --bind 0.0.0.0:$PORT wsgi:app
+web: gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 wsgi:app
 ```
 
-### railway.json
-```json
-{
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "startCommand": "gunicorn --bind 0.0.0.0:$PORT wsgi:app",
-    "healthcheckPath": "/",
-    "healthcheckTimeout": 100,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
-}
+### runtime.txt
+```
+python-3.11.7
 ```
 
-### nixpacks.toml
-```toml
-[phases.setup]
-nixPkgs = ["python311", "pip"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
-
-[phases.build]
-cmds = ["mkdir -p /tmp/flask_session"]
-
-[start]
-cmd = "gunicorn --bind 0.0.0.0:$PORT --workers 4 --timeout 120 wsgi:app"
-```
+Railway sẽ tự động detect Python app và sử dụng Procfile để start.
 
 ## 🌐 Environment Variables
 
