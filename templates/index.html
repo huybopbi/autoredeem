@@ -202,23 +202,6 @@
                             <h5><i class="fas fa-code"></i> Codes Configuration</h5>
                         </div>
                         <div class="card-body">
-                            <!-- Current Codes Info -->
-                            <div class="alert alert-info" id="codesInfo" style="display: none;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <i class="fas fa-file-alt"></i>
-                                        <strong>Current Codes File:</strong>
-                                        <span id="codesFileName">codes.txt</span>
-                                        <br>
-                                        <small class="text-muted">
-                                            <span id="codesCount">0</span> codes loaded
-                                        </small>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="viewCodes()">
-                                        <i class="fas fa-eye"></i> View
-                                    </button>
-                                </div>
-                            </div>
                                 <div class="mb-3">
                                     <label class="form-label">Upload Codes File (.txt)</label>
                                     <div class="file-upload" onclick="document.getElementById('codesFile').click()">
@@ -240,23 +223,6 @@
                             <h5><i class="fas fa-cookie-bite"></i> Cookies Configuration</h5>
                         </div>
                         <div class="card-body">
-                            <!-- Current Cookies Info -->
-                            <div class="alert alert-warning" id="cookiesInfo" style="display: none;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <i class="fas fa-shield-alt"></i>
-                                        <strong>Current Cookies:</strong>
-                                        <span id="cookiesFileName">cookies.txt</span>
-                                        <br>
-                                        <small class="text-muted">
-                                            <span id="cookiesCount">0</span> cookies loaded
-                                        </small>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-warning" onclick="viewCookies()">
-                                        <i class="fas fa-eye"></i> View
-                                    </button>
-                                </div>
-                            </div>
                                 <div class="mb-3">
                                     <label class="form-label">Upload Cookies File (.txt)</label>
                                     <div class="file-upload" onclick="document.getElementById('cookiesFile').click()">
@@ -461,7 +427,6 @@
                     document.getElementById('stopBtn').style.display = 'block';
                     document.getElementById('statusCard').style.display = 'block';
                     startStatusUpdates();
-                    loadFileInfo(); // Refresh file info display
                 }
             })
             .catch(error => {
@@ -504,12 +469,6 @@
                 document.getElementById('statusCard').style.display = 'none';
                 document.getElementById('startBtn').style.display = 'block';
                 document.getElementById('stopBtn').style.display = 'none';
-                // Clear the info displays
-                document.getElementById('codesInfo').style.display = 'none';
-                document.getElementById('cookiesInfo').style.display = 'none';
-                // Update info based on current textarea content
-                updateCodesInfo();
-                updateCookiesInfo();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -704,56 +663,6 @@
         }
 
 
-        // Load file info on page load
-        function loadFileInfo() {
-            // Always check textarea first, don't load from session/file
-            updateCodesInfo();
-            updateCookiesInfo();
-        }
-
-        // Update codes info from textarea
-        function updateCodesInfo() {
-            const codesText = document.getElementById('codesText').value.trim();
-            if (codesText) {
-                // Count codes from textarea
-                const codeLines = codesText.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
-                
-                if (codeLines.length > 0) {
-                    document.getElementById('codesCount').textContent = codeLines.length;
-                    document.getElementById('codesFileName').textContent = 'From textarea';
-                    document.getElementById('codesInfo').style.display = 'block';
-                } else {
-                    document.getElementById('codesInfo').style.display = 'none';
-                }
-            } else {
-                document.getElementById('codesInfo').style.display = 'none';
-            }
-        }
-
-        // Update cookies info from textarea
-        function updateCookiesInfo() {
-            const cookiesText = document.getElementById('cookiesText').value.trim();
-            if (cookiesText) {
-                // Count cookies from textarea
-                const cookieLines = cookiesText.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
-                let cookieCount = 0;
-                cookieLines.forEach(line => {
-                    if (line.includes('=')) {
-                        cookieCount++;
-                    }
-                });
-                
-                if (cookieCount > 0) {
-                    document.getElementById('cookiesCount').textContent = cookieCount;
-                    document.getElementById('cookiesFileName').textContent = 'From textarea';
-                    document.getElementById('cookiesInfo').style.display = 'block';
-                } else {
-                    document.getElementById('cookiesInfo').style.display = 'none';
-                }
-            } else {
-                document.getElementById('cookiesInfo').style.display = 'none';
-            }
-        }
 
         // Cleanup session function
         function cleanupSession() {
@@ -780,15 +689,10 @@
             }
         }
 
-        // Update codes info when textarea changes
-        document.getElementById('codesText').addEventListener('input', updateCodesInfo);
 
-        // Update cookies info when textarea changes
-        document.getElementById('cookiesText').addEventListener('input', updateCookiesInfo);
-
-        // Load file info on page load
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadFileInfo();
+            // Page ready
         });
     </script>
 </body>
