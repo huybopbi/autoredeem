@@ -44,29 +44,37 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# User files and sessions
-user_files/
+# Sensitive files
+codes.txt
+cookies.txt
 *.log
-*.session
+user_files/
+session_data/
 
-# Environment files
+# Keep example files
+!codes.example.txt
+!cookies.example.txt
+
+# Environment variables
 .env
 .env.local
 .env.production
 
-# Temporary session data (not used anymore)
-codes.txt
-cookies.txt
-monitor_config.json
+# Flask
+instance/
+.webassets-cache
 
-# Config files with sensitive data
-cookies.txt
-codes.txt
-monitor_config.json
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
 
 # Temporary files
 *.tmp
 *.temp
-
-# Test files
-test_redis.py

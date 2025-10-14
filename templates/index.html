@@ -139,75 +139,6 @@
             border-color: #667eea;
             background: rgba(102, 126, 234, 0.1);
         }
-        .channel-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            transition: transform 0.3s ease;
-            position: relative;
-        }
-        .channel-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .channel-card .channel-name {
-            font-weight: 600;
-            font-size: 1.1em;
-            margin-bottom: 5px;
-        }
-        .channel-card .channel-username {
-            opacity: 0.9;
-            font-size: 0.9em;
-        }
-        .channel-card .remove-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s ease;
-        }
-        .channel-card .remove-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .channel-status {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #28a745;
-            margin-right: 5px;
-        }
-        .channel-status.offline {
-            background: #dc3545;
-        }
-        .alert {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .alert-info {
-            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-            color: #0c5460;
-        }
-        .alert-warning {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            color: #856404;
-        }
-        .list-group-item {
-            border-radius: 8px !important;
-            margin-bottom: 5px;
-            border: 1px solid #e9ecef;
-        }
     </style>
 </head>
 <body>
@@ -215,7 +146,7 @@
         <div class="main-container">
             <!-- Header -->
             <div class="header">
-                <h1><i class="fas fa-gift"></i> CyborX Redeem Tool</h1>
+                <h1>CyborX Redeem Tool</h1>
                 <p>Automatic code redemption for cyborx.net</p>
                 <div class="alert alert-success mt-3">
                     <i class="fas fa-users"></i> <strong>Multi-User Mode:</strong> Each user has isolated session and files
@@ -262,76 +193,6 @@
                 </div>
             </div>
 
-            <!-- Telegram Monitor Section -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fab fa-telegram"></i> Telegram Monitor</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Telegram API ID</label>
-                                <input type="text" class="form-control" id="apiId" placeholder="Your API ID">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Telegram API Hash</label>
-                                <input type="text" class="form-control" id="apiHash" placeholder="Your API Hash">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-grid gap-2 d-md-flex">
-                        <button class="btn btn-success" id="startMonitorBtn" onclick="startTelegramMonitor()">
-                            <i class="fas fa-play"></i> Start Monitor
-                        </button>
-                        <button class="btn btn-danger" id="stopMonitorBtn" onclick="stopTelegramMonitor()" style="display: none;">
-                            <i class="fas fa-stop"></i> Stop Monitor
-                        </button>
-                        <button class="btn btn-info" onclick="showChannelModal()">
-                            <i class="fas fa-plus"></i> Add Channel
-                        </button>
-                        <button class="btn btn-secondary" onclick="showChannelsListModal()">
-                            <i class="fas fa-list"></i> View All
-                        </button>
-                    </div>
-                    <div class="mt-3" id="monitorStatus" style="display: none;">
-                        <div class="row text-center">
-                            <div class="col-3">
-                                <h6>Status</h6>
-                                <span id="monitorStatusText" class="badge bg-success">Running</span>
-                            </div>
-                            <div class="col-3">
-                                <h6>Channels</h6>
-                                <span id="monitorChannelsCount">0</span>
-                            </div>
-                            <div class="col-3">
-                                <h6>Codes Found</h6>
-                                <span id="monitorCodesFound">0</span>
-                            </div>
-                            <div class="col-3">
-                                <h6>Codes Redeemed</h6>
-                                <span id="monitorCodesRedeemed">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Monitored Channels Display -->
-                    <div class="mt-3" id="channelsDisplay">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6><i class="fas fa-list"></i> Monitored Channels</h6>
-                            <small class="text-muted" id="lastUpdate">Last updated: Never</small>
-                        </div>
-                        <div id="channelsListInline" class="row">
-                            <div class="col-12">
-                                <p class="text-muted text-center">No channels configured</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="row">
                 <!-- Left Column - Configuration -->
                 <div class="col-md-6">
@@ -358,23 +219,18 @@
                                     </button>
                                 </div>
                             </div>
-                            <form method="POST" action="/upload" enctype="multipart/form-data" onsubmit="return handleCodesUpload(event)">
                                 <div class="mb-3">
                                     <label class="form-label">Upload Codes File (.txt)</label>
                                     <div class="file-upload" onclick="document.getElementById('codesFile').click()">
                                         <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
                                         <p>Click to upload or drag & drop</p>
-                                        <input type="file" id="codesFile" name="codes_file" accept=".txt" style="display: none;">
+                                    <input type="file" id="codesFile" name="codes_file" accept=".txt" style="display: none;" onchange="handleFileUpload('codes')">
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Or paste codes manually:</label>
-                                    <textarea class="form-control" name="codes_text" rows="4" placeholder="CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;CYBORX-9999-8888-PREMIUM"></textarea>
+                                <textarea class="form-control" id="codesText" rows="4" placeholder="CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;CYBORX-9999-8888-PREMIUM"></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Save Codes
-                                </button>
-                            </form>
                         </div>
                     </div>
 
@@ -401,23 +257,18 @@
                                     </button>
                                 </div>
                             </div>
-                            <form method="POST" action="/upload" enctype="multipart/form-data" onsubmit="return handleCookiesUpload(event)">
                                 <div class="mb-3">
                                     <label class="form-label">Upload Cookies File (.txt)</label>
                                     <div class="file-upload" onclick="document.getElementById('cookiesFile').click()">
                                         <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
                                         <p>Click to upload or drag & drop</p>
-                                        <input type="file" id="cookiesFile" name="cookies_file" accept=".txt" style="display: none;">
+                                    <input type="file" id="cookiesFile" name="cookies_file" accept=".txt" style="display: none;" onchange="handleFileUpload('cookies')">
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Or paste cookies manually:</label>
-                                    <textarea class="form-control" name="cookies_text" rows="3" placeholder="CYBORXSESSID=your_session_id_here"></textarea>
+                                <textarea class="form-control" id="cookiesText" rows="3" placeholder="CYBORXSESSID=your_session_id_here"></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Save Cookies
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -496,52 +347,6 @@
         </div>
     </div>
 
-    <!-- Channel Modal -->
-    <div class="modal fade" id="channelModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Telegram Channel</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Channel Username</label>
-                        <input type="text" class="form-control" id="channelUsername" placeholder="@channel_username">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Display Name (Optional)</label>
-                        <input type="text" class="form-control" id="channelName" placeholder="Channel Display Name">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="addChannel()">Add Channel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Channels List Modal -->
-    <div class="modal fade" id="channelsListModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Monitored Channels</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="channelsList">
-                        <p class="text-muted">Loading channels...</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Codes View Modal -->
     <div class="modal fade" id="codesModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -602,7 +407,38 @@
             const mode = document.getElementById('modeSelect').value;
             const maxWorkers = document.getElementById('workersInput').value;
 
-            fetch('/start', {
+            // Get codes and cookies from form
+            const codesText = document.getElementById('codesText').value;
+            const cookiesText = document.getElementById('cookiesText').value;
+            
+            // Check if we have data
+            if (!codesText.trim() && !cookiesText.trim()) {
+                alert('Please enter codes and cookies first!');
+                return;
+            }
+            
+            // Create form data
+            const formData = new FormData();
+            
+            // Add codes
+            if (codesText.trim()) {
+                formData.append('codes_text', codesText);
+            }
+            
+            // Add cookies
+            if (cookiesText.trim()) {
+                formData.append('cookies_text', cookiesText);
+            }
+            
+            // First upload the data
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Then start the redeem process
+                    return fetch('/start', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -611,6 +447,10 @@
                     mode: mode,
                     max_workers: maxWorkers
                 })
+                    });
+                } else {
+                    throw new Error('Failed to upload data');
+                }
             })
             .then(response => response.json())
             .then(data => {
@@ -621,6 +461,7 @@
                     document.getElementById('stopBtn').style.display = 'block';
                     document.getElementById('statusCard').style.display = 'block';
                     startStatusUpdates();
+                    loadFileInfo(); // Refresh file info display
                 }
             })
             .catch(error => {
@@ -663,6 +504,12 @@
                 document.getElementById('statusCard').style.display = 'none';
                 document.getElementById('startBtn').style.display = 'block';
                 document.getElementById('stopBtn').style.display = 'none';
+                // Clear the info displays
+                document.getElementById('codesInfo').style.display = 'none';
+                document.getElementById('cookiesInfo').style.display = 'none';
+                // Update info based on current textarea content
+                updateCodesInfo();
+                updateCookiesInfo();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -734,7 +581,7 @@
                                     </div>
                                 </div>
                                 <div class="mt-1">
-                                    <small class="text-muted">${result.result}</small>
+                                    <small class="text-muted">${result.response}</small>
                                 </div>
                             </div>
                         `;
@@ -750,248 +597,25 @@
             });
         }
 
-        // File upload handlers
-        document.getElementById('codesFile').addEventListener('change', function() {
-            const fileName = this.files[0]?.name || 'No file selected';
-            this.parentElement.querySelector('p').textContent = fileName;
-        });
-
-        document.getElementById('cookiesFile').addEventListener('change', function() {
-            const fileName = this.files[0]?.name || 'No file selected';
-            this.parentElement.querySelector('p').textContent = fileName;
-        });
-
-        // Telegram Monitor Functions
-        function startTelegramMonitor() {
-            const apiId = document.getElementById('apiId').value;
-            const apiHash = document.getElementById('apiHash').value;
-
-            if (!apiId || !apiHash) {
-                alert('Please enter both API ID and API Hash');
-                return;
+        // File upload handler
+        function handleFileUpload(type) {
+            const fileInput = document.getElementById(type + 'File');
+            const textArea = document.getElementById(type + 'Text');
+            
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileName = file.name;
+                
+                // Update display
+                fileInput.parentElement.querySelector('p').textContent = fileName;
+                
+                // Read file content and put into textarea
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    textArea.value = e.target.result;
+                };
+                reader.readAsText(file);
             }
-
-            fetch('/telegram/start', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    api_id: apiId,
-                    api_hash: apiHash
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                } else {
-                    document.getElementById('startMonitorBtn').style.display = 'none';
-                    document.getElementById('stopMonitorBtn').style.display = 'block';
-                    document.getElementById('monitorStatus').style.display = 'block';
-                    startMonitorUpdates();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error starting Telegram monitor');
-            });
-        }
-
-        function stopTelegramMonitor() {
-            fetch('/telegram/stop', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('startMonitorBtn').style.display = 'block';
-                document.getElementById('stopMonitorBtn').style.display = 'none';
-                stopMonitorUpdates();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
-        function showChannelModal() {
-            const modal = new bootstrap.Modal(document.getElementById('channelModal'));
-            modal.show();
-        }
-
-        function showChannelsListModal() {
-            loadChannels(); // Refresh channels list
-            const modal = new bootstrap.Modal(document.getElementById('channelsListModal'));
-            modal.show();
-        }
-
-        function addChannel() {
-            const username = document.getElementById('channelUsername').value;
-            const name = document.getElementById('channelName').value || username;
-
-            if (!username) {
-                alert('Please enter channel username');
-                return;
-            }
-
-            fetch('/telegram/channels', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    name: name
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                } else {
-                    alert('Channel added successfully!');
-                    document.getElementById('channelUsername').value = '';
-                    document.getElementById('channelName').value = '';
-                    bootstrap.Modal.getInstance(document.getElementById('channelModal')).hide();
-                    loadChannels(); // Refresh both inline and modal displays
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error adding channel');
-            });
-        }
-
-        function loadChannels() {
-            fetch('/telegram/channels')
-            .then(response => response.json())
-            .then(channels => {
-                // Update modal list
-                let modalHtml = '';
-                if (channels.length === 0) {
-                    modalHtml = '<p class="text-muted">No channels configured</p>';
-                } else {
-                    channels.forEach(channel => {
-                        const isInviteLink = channel.username.startsWith('https://t.me/+');
-                        const displayUsername = isInviteLink ? 'Invite Link' : `@${channel.username}`;
-                        
-                        modalHtml += `
-                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                                <div>
-                                    <strong>${channel.name}</strong>
-                                    <br>
-                                    <small class="text-muted">${displayUsername}</small>
-                                    ${isInviteLink ? '<br><small class="text-warning"><i class="fas fa-exclamation-triangle"></i> Cannot monitor invite links</small>' : ''}
-                                </div>
-                                <button class="btn btn-sm btn-danger" onclick="removeChannel('${channel.username}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        `;
-                    });
-                }
-                document.getElementById('channelsList').innerHTML = modalHtml;
-                
-                // Update inline display
-                let inlineHtml = '';
-                if (channels.length === 0) {
-                    inlineHtml = '<div class="col-12"><p class="text-muted text-center">No channels configured</p></div>';
-                } else {
-                    channels.forEach(channel => {
-                        const isEnabled = channel.enabled !== false;
-                        const isInviteLink = channel.username.startsWith('https://t.me/+');
-                        const displayUsername = isInviteLink ? 'Invite Link' : `@${channel.username}`;
-                        const statusClass = isInviteLink ? 'offline' : (isEnabled ? '' : 'offline');
-                        
-                        inlineHtml += `
-                            <div class="col-md-6 col-lg-4">
-                                <div class="channel-card">
-                                    <button class="remove-btn" onclick="removeChannel('${channel.username}')" title="Remove channel">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    <div class="channel-name">
-                                        <span class="channel-status ${statusClass}"></span>
-                                        ${channel.name}
-                                    </div>
-                                    <div class="channel-username">${displayUsername}</div>
-                                    ${isInviteLink ? '<div class="text-warning mt-1"><small><i class="fas fa-exclamation-triangle"></i> Invite link - cannot monitor</small></div>' : ''}
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-                document.getElementById('channelsListInline').innerHTML = inlineHtml;
-                
-                // Update channel count
-                document.getElementById('monitorChannelsCount').textContent = channels.length;
-                
-                // Update last update time
-                const now = new Date();
-                document.getElementById('lastUpdate').textContent = `Last updated: ${now.toLocaleTimeString()}`;
-            })
-            .catch(error => {
-                console.error('Error loading channels:', error);
-            });
-        }
-
-        function removeChannel(username) {
-            if (confirm('Are you sure you want to remove this channel?')) {
-                // Encode username to handle special characters and URLs
-                const encodedUsername = encodeURIComponent(username);
-                
-                fetch(`/telegram/channels/${encodedUsername}`, {
-                    method: 'DELETE'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                    } else {
-                        alert('Channel removed successfully!');
-                        loadChannels(); // Refresh both inline and modal displays
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error removing channel');
-                });
-            }
-        }
-
-        let monitorInterval;
-
-        function startMonitorUpdates() {
-            monitorInterval = setInterval(updateMonitorStatus, 2000);
-        }
-
-        function stopMonitorUpdates() {
-            if (monitorInterval) clearInterval(monitorInterval);
-        }
-
-        function updateMonitorStatus() {
-            fetch('/telegram/status')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('monitorStatusText').textContent = data.running ? 'Running' : 'Stopped';
-                document.getElementById('monitorStatusText').className = data.running ? 'badge bg-success' : 'badge bg-secondary';
-                document.getElementById('monitorChannelsCount').textContent = data.channels ? data.channels.length : 0;
-                
-                if (data.stats) {
-                    document.getElementById('monitorCodesFound').textContent = data.stats.codes_found || 0;
-                    document.getElementById('monitorCodesRedeemed').textContent = data.stats.codes_redeemed || 0;
-                }
-
-                if (!data.running) {
-                    document.getElementById('startMonitorBtn').style.display = 'block';
-                    document.getElementById('stopMonitorBtn').style.display = 'none';
-                    stopMonitorUpdates();
-                }
-            })
-            .catch(error => {
-                console.error('Error updating monitor status:', error);
-            });
         }
 
         // View codes function
@@ -1079,47 +703,56 @@
             modal.show();
         }
 
-        // Handle codes upload
-        function handleCodesUpload(event) {
-            // Let the form submit normally, then refresh info
-            setTimeout(() => {
-                loadFileInfo();
-            }, 1000);
-            return true;
-        }
-
-        // Handle cookies upload
-        function handleCookiesUpload(event) {
-            // Let the form submit normally, then refresh info
-            setTimeout(() => {
-                loadFileInfo();
-            }, 1000);
-            return true;
-        }
 
         // Load file info on page load
         function loadFileInfo() {
-            // Load codes info
-            fetch('/codes')
-            .then(response => response.json())
-            .then(data => {
-                if (!data.error && data.count > 0) {
-                    document.getElementById('codesCount').textContent = data.count;
+            // Always check textarea first, don't load from session/file
+            updateCodesInfo();
+            updateCookiesInfo();
+        }
+
+        // Update codes info from textarea
+        function updateCodesInfo() {
+            const codesText = document.getElementById('codesText').value.trim();
+            if (codesText) {
+                // Count codes from textarea
+                const codeLines = codesText.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
+                
+                if (codeLines.length > 0) {
+                    document.getElementById('codesCount').textContent = codeLines.length;
+                    document.getElementById('codesFileName').textContent = 'From textarea';
                     document.getElementById('codesInfo').style.display = 'block';
+                } else {
+                    document.getElementById('codesInfo').style.display = 'none';
                 }
-            })
-            .catch(error => console.error('Error loading codes info:', error));
-            
-            // Load cookies info
-            fetch('/cookies')
-            .then(response => response.json())
-            .then(data => {
-                if (!data.error && data.count > 0) {
-                    document.getElementById('cookiesCount').textContent = data.count;
+            } else {
+                document.getElementById('codesInfo').style.display = 'none';
+            }
+        }
+
+        // Update cookies info from textarea
+        function updateCookiesInfo() {
+            const cookiesText = document.getElementById('cookiesText').value.trim();
+            if (cookiesText) {
+                // Count cookies from textarea
+                const cookieLines = cookiesText.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
+                let cookieCount = 0;
+                cookieLines.forEach(line => {
+                    if (line.includes('=')) {
+                        cookieCount++;
+                    }
+                });
+                
+                if (cookieCount > 0) {
+                    document.getElementById('cookiesCount').textContent = cookieCount;
+                    document.getElementById('cookiesFileName').textContent = 'From textarea';
                     document.getElementById('cookiesInfo').style.display = 'block';
+                } else {
+                    document.getElementById('cookiesInfo').style.display = 'none';
                 }
-            })
-            .catch(error => console.error('Error loading cookies info:', error));
+            } else {
+                document.getElementById('cookiesInfo').style.display = 'none';
+            }
         }
 
         // Cleanup session function
@@ -1147,9 +780,14 @@
             }
         }
 
-        // Load channels on page load
+        // Update codes info when textarea changes
+        document.getElementById('codesText').addEventListener('input', updateCodesInfo);
+
+        // Update cookies info when textarea changes
+        document.getElementById('cookiesText').addEventListener('input', updateCookiesInfo);
+
+        // Load file info on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadChannels();
             loadFileInfo();
         });
     </script>

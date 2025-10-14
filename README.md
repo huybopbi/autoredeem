@@ -1,23 +1,22 @@
 # CyborX Auto Redeem Tool
 
-🚀 **Multi-User Web Application** for automatic code redemption on cyborx.net with Telegram monitoring support.
+🚀 **Simple Web Application** for automatic code redemption on cyborx.net
 
 ## 🌟 Features
 
 ### Core Features
-- ✅ **Multi-User Support** - Each user has isolated session and files
 - ✅ **Web Interface** - Beautiful, responsive web UI
-- ✅ **Auto Redeem** - Automatic code redemption from uploaded files
-- ✅ **Telegram Monitor** - Monitor Telegram channels for new codes
+- ✅ **Auto Redeem** - Automatic code redemption from text input
 - ✅ **Real-time Progress** - Live progress tracking and statistics
-- ✅ **Session Management** - Secure user session isolation
+- ✅ **Session Management** - Simple in-memory session storage
+- ✅ **Stop on Success** - Automatically stops after first successful redeem
 
 ### Advanced Features
 - 🔄 **Multi-threading** - Fast processing with configurable workers
 - 📊 **Statistics** - Detailed success/error tracking
 - 🛡️ **Security** - Cookie masking and session isolation
 - 📱 **Responsive Design** - Works on desktop and mobile
-- 🎯 **Pattern Matching** - Smart code detection from messages
+- 🎯 **JSON Response Parsing** - Smart API response detection
 
 ## 🚀 Quick Start
 
@@ -28,83 +27,79 @@ cd autoredeem
 pip install -r requirements.txt
 ```
 
-### 2. Start Redis
-```bash
-# Using Docker
-docker run -d -p 6379:6379 redis:7-alpine
-
-# Or install Redis locally
-# Ubuntu/Debian: sudo apt install redis-server
-# macOS: brew install redis
-# Windows: Download from https://redis.io/download
-```
-
-### 3. Run Web App
+### 2. Run Web App
 ```bash
 python app.py
 ```
 
-### 4. Access Web Interface
+### 3. Access Web Interface
 Open your browser and go to: `http://localhost:5000`
 
 ## 📖 Usage Guide
 
 ### Basic Usage
-1. **Upload Codes**: Upload your codes file or paste manually
-2. **Upload Cookies**: Upload cookies from cyborx.net
-3. **Start Redeem**: Choose single or multi-thread mode
-4. **Monitor Progress**: Watch real-time progress and results
+1. **Enter Codes**: Paste your codes in the textarea (one per line)
+2. **Enter Cookies**: Paste your cyborx.net cookies in the textarea
+3. **Choose Mode**: Select single thread (stable) or multi-thread (fast)
+4. **Start Redeem**: Click "Start Redeem" button
+5. **Monitor Progress**: Watch real-time progress and results
+6. **Auto Stop**: Tool automatically stops after first successful redeem
 
-### Telegram Monitoring
-1. **Get API Credentials**: From https://my.telegram.org/apps
-2. **Add Channels**: Add Telegram channels to monitor
-3. **Start Monitor**: Bot will auto-redeem codes from channels
-4. **View Results**: Check statistics and redeemed codes
+### Code Format
+```
+CYBORX-1234-5678-PREMIUM
+CYBORX-ABCD-EFGH-CREDITS
+CYBORX-9999-8888-PREMIUM
+```
+
+### Cookie Format
+```
+CYBORXSESSID=your_session_id_here
+PHPSESSID=your_php_session_id
+```
+
+### Setup Files
+1. Copy `codes.example.txt` to `codes.txt` and add your codes
+2. Copy `cookies.example.txt` to `cookies.txt` and add your cookies
+3. Or paste directly into the web interface textareas
 
 ## 🔧 Configuration
-
-### Environment Variables
-```bash
-export FLASK_ENV=production
-export FLASK_DEBUG=False
-```
 
 ### File Structure
 ```
 autoredeem/
 ├── app.py                    # Main Flask application
 ├── redeem_tool.py           # Core redeem logic
-├── telegram_monitor.py      # Telegram monitoring
 ├── templates/
 │   └── index.html          # Web interface
 ├── requirements.txt        # Python dependencies
+├── codes.example.txt       # Example codes file
+├── cookies.example.txt     # Example cookies file
+├── .gitignore             # Git ignore rules
 ├── README.md              # This file
-└── .gitignore            # Git ignore rules
+└── LICENSE                # License file
 ```
 
 ## 🛠️ API Endpoints
 
 ### Core Endpoints
 - `GET /` - Main web interface
-- `POST /upload` - Upload codes/cookies files
+- `POST /upload` - Upload codes/cookies data
 - `POST /start` - Start redeem process
 - `GET /status` - Get current status
 - `GET /results` - Get redeem results
 - `POST /stop` - Stop redeem process
 - `POST /clear` - Clear results
+- `POST /cleanup` - Cleanup session
 
-### Telegram Endpoints
-- `POST /telegram/start` - Start Telegram monitor
-- `POST /telegram/stop` - Stop Telegram monitor
-- `GET /telegram/status` - Get monitor status
-- `GET /telegram/channels` - Get monitored channels
-- `POST /telegram/channels` - Add new channel
-- `DELETE /telegram/channels/<username>` - Remove channel
+### File Endpoints
+- `GET /codes` - Get current codes info
+- `GET /cookies` - Get current cookies info
 
 ## 🔐 Security Features
 
 - **Session Isolation** - Each user has separate session
-- **Memory Storage** - Data stored in memory only, no files on disk
+- **Memory Storage** - Data stored in memory only, no persistent files
 - **Cookie Masking** - Sensitive data is masked in UI
 - **Input Validation** - All inputs are validated
 - **Error Handling** - Comprehensive error handling
@@ -114,39 +109,53 @@ autoredeem/
 
 ### Session Management
 - Each user gets unique session ID
-- Data stored in Redis (scalable and persistent)
+- Data stored in memory (simple and fast)
 - Complete isolation between users
-- Session auto-expires after 24 hours
-- Redis-based session management
+- Session auto-expires when browser closes
+- Filesystem-based session management
 
 ### Data Storage
 ```
-Redis Storage:
-├── user_session:{user_id_1}
+Memory Storage:
+├── global_task_data[user_id_1]
 │   ├── codes: ["CYBORX-1234-5678-PREMIUM", ...]
 │   ├── cookies: {"CYBORXSESSID": "value", ...}
 │   ├── task_results: [...]
-│   └── created_at: "2024-01-01T00:00:00"
-└── user_session:{user_id_2}
+│   └── task_status: {...}
+└── global_task_data[user_id_2]
     ├── codes: ["CYBORX-ABCD-EFGH-CREDITS", ...]
     ├── cookies: {"CYBORXSESSID": "value", ...}
     ├── task_results: [...]
-    └── created_at: "2024-01-01T00:00:00"
+    └── task_status: {...}
 ```
 
-## 🎯 Telegram Integration
+## 🎯 API Response Handling
 
-### Setup
-1. Get API ID and Hash from https://my.telegram.org/apps
-2. Add channels to monitor
-3. Start monitoring
-4. Bot automatically redeems codes
+### Success Detection
+The tool automatically detects successful redeems by:
+1. **JSON Response**: Parses API response and checks `"ok": true`
+2. **Text Detection**: Fallback to keyword detection ("success", "redeemed")
+3. **Auto Stop**: Stops processing after first successful redeem
 
-### Supported Code Formats
-- `CYBORX-1234-5678-PREMIUM`
-- `cyborx-abcd-efgh-credits`
-- `CYBORX 1234 5678 PREMIUM`
-- `cyborx abcd efgh credits`
+### Response Examples
+```json
+// Success Response
+{
+  "ok": true,
+  "data": {
+    "code": "CYBORX-6MBVYY9V-H9UGU43G-PREMIUM",
+    "credits_added": 100,
+    "new_status": "premium",
+    "new_expiry": "2025-10-16 00:00:00"
+  }
+}
+
+// Error Response
+{
+  "ok": false,
+  "error": "Code already used"
+}
+```
 
 ## 🚀 Deployment
 
@@ -157,53 +166,21 @@ python app.py
 
 ### Production Deployment
 ```bash
-# Using Docker Compose (Recommended)
-docker-compose up -d
-
 # Using Gunicorn
 pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 
-# Using Docker
-docker build -t autoredeem .
-docker run -p 5000:5000 autoredeem
+# Using systemd service
+sudo systemctl start autoredeem
+sudo systemctl enable autoredeem
 ```
 
 ### Environment Variables
 ```bash
-# Copy example environment file
-cp env.example .env
-
-# Edit configuration
-# Option 1: Redis URL (Recommended)
-REDIS_URL=redis://localhost:6379/0
-
-# Option 2: Individual Redis config
-# REDIS_HOST=localhost
-# REDIS_PORT=6379
-# REDIS_DB=0
-
-# Other settings
-FLASK_ENV=production
-SECRET_KEY=your-secret-key-here
-```
-
-### Redis URL Examples
-```bash
-# Local Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Redis with password
-REDIS_URL=redis://:password@localhost:6379/0
-
-# Redis with username and password
-REDIS_URL=redis://username:password@localhost:6379/0
-
-# Cloud Redis (Redis Cloud, AWS ElastiCache, etc.)
-REDIS_URL=redis://user:pass@redis-cloud.com:12345/0
-
-# Redis with SSL
-REDIS_URL=rediss://user:pass@secure-redis.com:6380/0
+# Flask settings
+export FLASK_ENV=production
+export FLASK_DEBUG=False
+export SECRET_KEY=your-secret-key-here
 ```
 
 ## 📊 Monitoring
@@ -213,11 +190,36 @@ REDIS_URL=rediss://user:pass@secure-redis.com:6380/0
 - Success/failure rates
 - Processing time
 - Real-time progress
+- Current code being processed
 
 ### Logs
 - Detailed operation logs
 - Error tracking
 - Performance metrics
+- ASCII-safe logging (no emoji issues)
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Unicode Error on Windows**
+   - Fixed: All emoji characters replaced with ASCII markers
+   - Use `[OK]`, `[ERROR]`, `[SUCCESS]` instead of emoji
+
+2. **Session Not Updating**
+   - Fixed: Using global_task_data for thread communication
+   - Web interface updates in real-time
+
+3. **Tool Doesn't Stop After Success**
+   - Fixed: Automatic stop after first successful redeem
+   - JSON response parsing for accurate detection
+
+### Debug Mode
+```bash
+# Enable debug logging
+export FLASK_DEBUG=True
+python app.py
+```
 
 ## 🤝 Contributing
 
@@ -245,7 +247,6 @@ If you encounter any issues:
 ## 🎉 Acknowledgments
 
 - Flask framework for web interface
-- Telethon for Telegram integration
 - Bootstrap for UI components
 - All contributors and users
 

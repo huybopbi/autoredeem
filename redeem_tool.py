@@ -38,6 +38,7 @@ class CyborXRedeemTool:
         self.success_count = 0
         self.error_count = 0
         self.lock = threading.Lock()
+        self.should_stop = False  # Flag để dừng khi thành công
         
     def update_progress(self):
         with self.lock:
@@ -68,27 +69,62 @@ class CyborXRedeemTool:
             if response.status_code == 200:
                 response_text = response.text.strip()
                 
-                # Kiểm tra các trường hợp thành công/thất bại
-                if "success" in response_text.lower() or "redeemed" in response_text.lower():
-                    print(f"✅ SUCCESS ({code_number}/{self.total_codes}): {code}")
-                    print(f"📡 Response: {response_text}")
-                    with self.lock:
-                        self.success_count += 1
-                elif "not found" in response_text.lower():
-                    print(f"❌ NOT FOUND ({code_number}/{self.total_codes}): {code}")
-                    print(f"📡 Response: {response_text}")
-                    with self.lock:
-                        self.error_count += 1
-                elif "already used" in response_text.lower() or "expired" in response_text.lower():
-                    print(f"⚠️  ALREADY USED/EXPIRED ({code_number}/{self.total_codes}): {code}")
-                    print(f"📡 Response: {response_text}")
-                    with self.lock:
-                        self.error_count += 1
-                else:
-                    print(f"❓ UNKNOWN ({code_number}/{self.total_codes}): {code}")
-                    print(f"📡 Response: {response_text}")
-                    with self.lock:
-                        self.error_count += 1
+                # Thử parse JSON response
+                try:
+                    import json
+                    response_json = json.loads(response_text)
+                    
+                    # Kiểm tra response JSON từ API
+                    if response_json.get("ok") == True:
+                        data = response_json.get("data", {})
+                        credits_added = data.get("credits_added", 0)
+                        new_status = data.get("new_status", "")
+                        new_expiry = data.get("new_expiry", "")
+                        
+                        print(f"✅ SUCCESS ({code_number}/{self.total_codes}): {code}")
+                        print(f"📡 Response: {response_text}")
+                        if credits_added > 0:
+                            print(f"🎁 Credits added: {credits_added}")
+                        if new_status:
+                            print(f"👑 New status: {new_status}")
+                        if new_expiry:
+                            print(f"📅 Expiry: {new_expiry}")
+                        
+                        with self.lock:
+                            self.success_count += 1
+                            self.should_stop = True  # Dừng khi thành công
+                    else:
+                        # API trả về ok: false
+                        error_msg = response_json.get("error", "Unknown error")
+                        print(f"❌ API ERROR ({code_number}/{self.total_codes}): {code}")
+                        print(f"📡 Response: {response_text}")
+                        print(f"🚫 Error: {error_msg}")
+                        with self.lock:
+                            self.error_count += 1
+                            
+                except json.JSONDecodeError:
+                    # Không phải JSON, fallback về logic cũ
+                    if "success" in response_text.lower() or "redeemed" in response_text.lower():
+                        print(f"✅ SUCCESS ({code_number}/{self.total_codes}): {code}")
+                        print(f"📡 Response: {response_text}")
+                        with self.lock:
+                            self.success_count += 1
+                            self.should_stop = True  # Dừng khi thành công
+                    elif "not found" in response_text.lower():
+                        print(f"❌ NOT FOUND ({code_number}/{self.total_codes}): {code}")
+                        print(f"📡 Response: {response_text}")
+                        with self.lock:
+                            self.error_count += 1
+                    elif "already used" in response_text.lower() or "expired" in response_text.lower():
+                        print(f"⚠️  ALREADY USED/EXPIRED ({code_number}/{self.total_codes}): {code}")
+                        print(f"📡 Response: {response_text}")
+                        with self.lock:
+                            self.error_count += 1
+                    else:
+                        print(f"❓ UNKNOWN ({code_number}/{self.total_codes}): {code}")
+                        print(f"📡 Response: {response_text}")
+                        with self.lock:
+                            self.error_count += 1
             else:
                 print(f"❌ HTTP ERROR ({code_number}/{self.total_codes}): {code}")
                 print(f"📡 Status: {response.status_code}")
@@ -166,25 +202,33 @@ class CyborXRedeemTool:
     def run_single_thread(self, codes):
         """Chạy redeem code với single thread"""
         self.total_codes = len(codes)
+        self.should_stop = False  # Reset flag
         
         print(f"✅ Loaded {self.total_codes} codes")
         print(f"🧵 Mode: Single Thread")
         print(f"⏰ Timeout: 30 seconds")
         print("🚀 Starting redeem process...")
+        print("🛑 Will stop after first successful redeem")
         print("=" * 70)
         
         for i, code in enumerate(codes, 1):
+            if self.should_stop:
+                print(f"🛑 Stopping after successful redeem at code {i-1}")
+                break
+                
             self.redeem_code(code, i)
             time.sleep(1)  # Delay 1 giây giữa các request
     
     def run_multi_thread(self, codes, max_workers=5):
         """Chạy redeem code với multi-threading"""
         self.total_codes = len(codes)
+        self.should_stop = False  # Reset flag
         
         print(f"✅ Loaded {self.total_codes} codes")
         print(f"🧵 Mode: Multi-threaded ({max_workers} workers)")
         print(f"⏰ Timeout: 30 seconds")
         print("🚀 Starting multi-threaded redeem process...")
+        print("🛑 Will stop after first successful redeem")
         print("=" * 70)
         
         code_data = [(code, i+1) for i, code in enumerate(codes)]
@@ -193,6 +237,12 @@ class CyborXRedeemTool:
             futures = [executor.submit(self.redeem_code, code, number) for code, number in code_data]
             
             for future in as_completed(futures):
+                if self.should_stop:
+                    print("🛑 Stopping after successful redeem")
+                    # Cancel remaining futures
+                    for f in futures:
+                        f.cancel()
+                    break
                 result = future.result()
     
     def print_summary(self):

@@ -10,123 +10,36 @@ import os
 import threading
 import time
 import json
-import asyncio
 import uuid
 import shutil
-import redis
 from datetime import datetime, timedelta
 from redeem_tool import CyborXRedeemTool
-from telegram_monitor import TelegramMonitor
 
 app = Flask(__name__)
 app.secret_key = 'cyborx_redeem_tool_2024_secure_key_for_multi_user'
 
-# Redis configuration
-def get_redis_client():
-    """Get Redis client from URL or individual config"""
-    try:
-        redis_url = os.getenv('REDIS_URL')
-        
-        if redis_url:
-            # Use Redis URL (for production/cloud)
-            return redis.from_url(redis_url, decode_responses=True)
-        else:
-            # Use individual config (for local development)
-            return redis.Redis(
-                host=os.getenv('REDIS_HOST', 'localhost'),
-                port=int(os.getenv('REDIS_PORT', 6379)),
-                db=int(os.getenv('REDIS_DB', 0)),
-                decode_responses=True
-            )
-    except Exception as e:
-        print(f"Warning: Redis connection failed: {e}")
-        return None
-
-redis_client = get_redis_client()
-
-# Flask-Session configuration
-if redis_client:
-    try:
-        # Test Redis connection
-        redis_client.ping()
-        app.config['SESSION_TYPE'] = 'redis'
-        app.config['SESSION_REDIS'] = redis_client
-        print("✅ Redis session storage enabled")
-    except Exception as e:
-        print(f"Warning: Redis session failed, using filesystem: {e}")
-        app.config['SESSION_TYPE'] = 'filesystem'
-        app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
-else:
-    print("Warning: No Redis client, using filesystem session")
-    app.config['SESSION_TYPE'] = 'filesystem'
-    app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
-
+# Simple session configuration
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'cyborx:'
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 Session(app)
 
+# Global variables to store task data
+global_task_data = {}
+
 def get_user_session():
-    """Get or create user session from Redis or memory"""
+    """Get or create user session in memory"""
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
         session.permanent = True
     
-    user_id = session['user_id']
-    
-    if redis_client:
-        try:
-            session_key = f"user_session:{user_id}"
-            
-            # Check if session exists in Redis
-            if not redis_client.exists(session_key):
-                # Create new session
-                default_session = {
-                    'task_results': [],
-                    'task_status': {
-                        'running': False,
-                        'progress': 0,
-                        'total': 0,
-                        'success': 0,
-                        'error': 0,
-                        'current_code': '',
-                        'start_time': None,
-                        'end_time': None
-                    },
-                    'telegram_monitor': None,
-                    'monitor_status': {
-                        'running': False,
-                        'channels': [],
-                        'stats': {},
-                        'start_time': None
-                    },
-                    'data': {
-                        'codes': [],
-                        'cookies': {},
-                        'codes_text': '',
-                        'cookies_text': ''
-                    },
-                    'created_at': datetime.now().isoformat(),
-                    'last_accessed': datetime.now().isoformat()
-                }
-                
-                # Store in Redis with 24 hour expiration
-                redis_client.setex(session_key, 86400, json.dumps(default_session))
-            
-            # Update last accessed time
-            session_data = json.loads(redis_client.get(session_key))
-            session_data['last_accessed'] = datetime.now().isoformat()
-            redis_client.setex(session_key, 86400, json.dumps(session_data))
-            
-            return session_data
-        except Exception as e:
-            print(f"Warning: Redis session failed, using memory: {e}")
-    
-    # Fallback to memory storage
+    # Use memory storage only
     if 'user_data' not in session:
         session['user_data'] = {
             'task_results': [],
@@ -139,13 +52,6 @@ def get_user_session():
                 'current_code': '',
                 'start_time': None,
                 'end_time': None
-            },
-            'telegram_monitor': None,
-            'monitor_status': {
-                'running': False,
-                'channels': [],
-                'stats': {},
-                'start_time': None
             },
             'data': {
                 'codes': [],
@@ -162,17 +68,9 @@ def get_user_session():
     return session['user_data']
 
 def save_user_session(user_id, session_data):
-    """Save user session to Redis or memory"""
-    if redis_client:
-        try:
-            session_key = f"user_session:{user_id}"
-            session_data['last_accessed'] = datetime.now().isoformat()
-            redis_client.setex(session_key, 86400, json.dumps(session_data))
-        except Exception as e:
-            print(f"Warning: Redis save failed: {e}")
-    else:
-        # Fallback to memory storage
-        session['user_data'] = session_data
+    """Save user session to memory"""
+    # Use memory storage only
+    session['user_data'] = session_data
 
 def parse_codes_from_text(text):
     """Parse codes from text input"""
@@ -239,12 +137,31 @@ class WebRedeemTool(CyborXRedeemTool):
         # Add to results
         if self.user_session:
             if result:
-                self.user_session['task_results'].append({
+                # Parse response to determine success
+                response_text = result['response']
+                is_success = False
+                
+                try:
+                    import json
+                    response_json = json.loads(response_text)
+                    is_success = response_json.get("ok") == True
+                except json.JSONDecodeError:
+                    # Fallback to text-based detection
+                    is_success = "success" in response_text.lower() or "redeemed" in response_text.lower()
+                
+                result_data = {
                     'code': code,
-                    'status': 'success' if result['status_code'] == 200 else 'error',
+                    'status': 'success' if is_success else 'error',
                     'response': result['response'],
                     'timestamp': datetime.now().strftime('%H:%M:%S')
-                })
+                }
+                
+                self.user_session['task_results'].append(result_data)
+                
+                # Dừng task nếu thành công
+                if is_success:
+                    self.user_session['task_status']['running'] = False
+                    self.user_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
             else:
                 self.user_session['task_results'].append({
                     'code': code,
@@ -265,59 +182,75 @@ class WebRedeemTool(CyborXRedeemTool):
 
 def run_redeem_task(codes, cookies, mode='single', max_workers=5, user_id=None):
     """Run redeem task in background thread"""
+    global global_task_data
+    print(f"[DEBUG] run_redeem_task started with {len(codes)} codes, mode: {mode}")
+    
     try:
-        # Get session from Redis
-        session_key = f"user_session:{user_id}"
-        user_session = json.loads(redis_client.get(session_key))
+        # Initialize global task data
+        global_task_data[user_id] = {
+            'task_results': [],
+            'task_status': {
+                'running': True,
+                'progress': 0,
+                'total': len(codes),
+                'success': 0,
+                'error': 0,
+                'current_code': '',
+                'start_time': datetime.now().strftime('%H:%M:%S'),
+                'end_time': None
+            }
+        }
         
-        user_session['task_status']['running'] = True
-        user_session['task_status']['start_time'] = datetime.now().strftime('%H:%M:%S')
-        user_session['task_status']['progress'] = 0
-        user_session['task_status']['success'] = 0
-        user_session['task_status']['error'] = 0
-        user_session['task_results'].clear()
-        
-        # Save initial state
-        save_user_session(user_id, user_session)
+        print(f"[DEBUG] Initial state created in global_task_data")
         
         # Create tool instance
-        tool = WebRedeemTool(cookies, user_session)
+        print(f"[DEBUG] Creating WebRedeemTool instance")
+        tool = WebRedeemTool(cookies, global_task_data[user_id])
         
         # Set callback for progress updates
         def progress_callback(data):
-            # Get fresh session data
-            current_session = json.loads(redis_client.get(session_key))
-            current_session['task_status'].update(data)
-            save_user_session(user_id, current_session)
+            try:
+                # Update the global task data
+                if user_id in global_task_data:
+                    global_task_data[user_id]['task_status'].update(data)
+                    print(f"[DEBUG] Progress updated: {data}")
+            except Exception as e:
+                print(f"Warning: Progress callback failed: {e}")
         
         tool.set_web_callback(progress_callback)
+        print(f"[DEBUG] Callback set, starting redeem process...")
         
         # Run based on mode
         if mode == 'single':
+            print(f"[DEBUG] Running single thread mode")
             tool.run_single_thread(codes)
         else:
+            print(f"[DEBUG] Running multi thread mode with {max_workers} workers")
             tool.run_multi_thread(codes, max_workers)
         
+        print(f"[DEBUG] Redeem process completed")
+        
         # Update final state
-        final_session = json.loads(redis_client.get(session_key))
-        final_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
-        save_user_session(user_id, final_session)
+        if user_id in global_task_data:
+            global_task_data[user_id]['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
+            global_task_data[user_id]['task_status']['running'] = False
         
     except Exception as e:
         print(f"Error in redeem task: {str(e)}")
+        import traceback
+        traceback.print_exc()
         # Update error state
         try:
-            error_session = json.loads(redis_client.get(session_key))
-            error_session['task_status']['running'] = False
-            save_user_session(user_id, error_session)
+            if user_id in global_task_data:
+                global_task_data[user_id]['task_status']['running'] = False
         except:
             pass
     finally:
         # Ensure running is set to False
         try:
-            final_session = json.loads(redis_client.get(session_key))
-            final_session['task_status']['running'] = False
-            save_user_session(user_id, final_session)
+            if user_id in global_task_data:
+                global_task_data[user_id]['task_status']['running'] = False
+                print(f"[DEBUG] Task marked as completed")
         except:
             pass
 
@@ -450,27 +383,35 @@ def upload_files():
 @app.route('/start', methods=['POST'])
 def start_redeem():
     """Start redeem process"""
-    user_session = get_user_session()
-    
-    if user_session['task_status']['running']:
-        return jsonify({'error': 'Task is already running'}), 400
-    
     try:
+        user_session = get_user_session()
+        user_id = session['user_id']  # Get user_id from session
+        
+        print(f"[DEBUG] Starting redeem for user: {user_id}")
+        print(f"[DEBUG] Task running: {user_session['task_status']['running']}")
+        
+        if user_session['task_status']['running']:
+            return jsonify({'error': 'Task is already running'}), 400
+        
         # Load codes from user session
         codes = user_session['data']['codes']
+        print(f"[DEBUG] Codes loaded: {len(codes)} codes")
         if not codes:
             return jsonify({'error': 'No codes found. Please upload codes first.'}), 400
         
         # Load cookies from user session
         cookies = user_session['data']['cookies']
+        print(f"[DEBUG] Cookies loaded: {len(cookies)} cookies")
         if not cookies:
             return jsonify({'error': 'No cookies found. Please upload cookies first.'}), 400
         
         # Get parameters
         mode = request.json.get('mode', 'single')
         max_workers = int(request.json.get('max_workers', 5))
+        print(f"[DEBUG] Mode: {mode}, Workers: {max_workers}")
         
         # Start background task
+        print(f"[DEBUG] Starting background thread...")
         task_thread = threading.Thread(
             target=run_redeem_task,
             args=(codes, cookies, mode, max_workers, user_id)
@@ -478,22 +419,46 @@ def start_redeem():
         task_thread.daemon = True
         task_thread.start()
         
+        print(f"[DEBUG] Thread started successfully")
         return jsonify({'message': 'Redeem process started successfully!'})
         
     except Exception as e:
+        print(f"[ERROR] Start redeem failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/status')
 def get_status():
     """Get current task status"""
-    user_session = get_user_session()
-    return jsonify(user_session['task_status'])
+    global global_task_data
+    user_id = session.get('user_id')
+    
+    if user_id and user_id in global_task_data:
+        return jsonify(global_task_data[user_id]['task_status'])
+    else:
+        # Return default status if no task running
+        return jsonify({
+            'running': False,
+            'progress': 0,
+            'total': 0,
+            'success': 0,
+            'error': 0,
+            'current_code': '',
+            'start_time': None,
+            'end_time': None
+        })
 
 @app.route('/results')
 def get_results():
     """Get task results"""
-    user_session = get_user_session()
-    return jsonify(user_session['task_results'])
+    global global_task_data
+    user_id = session.get('user_id')
+    
+    if user_id and user_id in global_task_data:
+        return jsonify(global_task_data[user_id]['task_results'])
+    else:
+        return jsonify([])
 
 @app.route('/codes')
 def get_codes():
@@ -566,166 +531,11 @@ def clear_results():
     
     return jsonify({'message': 'Results cleared'})
 
-# Telegram Monitor Routes
-@app.route('/telegram/start', methods=['POST'])
-def start_telegram_monitor():
-    """Start Telegram monitor"""
-    global telegram_monitor, monitor_status
-    
-    if monitor_status['running']:
-        return jsonify({'error': 'Monitor is already running'}), 400
-    
-    try:
-        api_id = request.json.get('api_id')
-        api_hash = request.json.get('api_hash')
-        
-        if not api_id or not api_hash:
-            return jsonify({'error': 'API ID and Hash are required'}), 400
-        
-        # Create monitor instance
-        telegram_monitor = TelegramMonitor(int(api_id), api_hash)
-        
-        # Start monitor in background thread
-        def run_monitor():
-            global monitor_status
-            try:
-                monitor_status['running'] = True
-                monitor_status['start_time'] = datetime.now().strftime('%H:%M:%S')
-                
-                # Load config
-                telegram_monitor.load_config()
-                monitor_status['channels'] = telegram_monitor.monitored_channels
-                
-                # Run monitor
-                asyncio.run(telegram_monitor.start())
-                
-            except Exception as e:
-                print(f"Monitor error: {str(e)}")
-            finally:
-                monitor_status['running'] = False
-        
-        monitor_thread = threading.Thread(target=run_monitor)
-        monitor_thread.daemon = True
-        monitor_thread.start()
-        
-        return jsonify({'message': 'Telegram monitor started successfully!'})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/telegram/stop', methods=['POST'])
-def stop_telegram_monitor():
-    """Stop Telegram monitor"""
-    global monitor_status
-    
-    if not monitor_status['running']:
-        return jsonify({'error': 'Monitor is not running'}), 400
-    
-    monitor_status['running'] = False
-    return jsonify({'message': 'Monitor stop signal sent'})
-
-@app.route('/telegram/status')
-def get_telegram_status():
-    """Get Telegram monitor status"""
-    global telegram_monitor, monitor_status
-    
-    if telegram_monitor:
-        monitor_status['stats'] = telegram_monitor.get_stats()
-        # Add channel-specific stats
-        monitor_status['channels'] = telegram_monitor.monitored_channels
-    
-    return jsonify(monitor_status)
-
-@app.route('/telegram/channels', methods=['GET', 'POST'])
-def manage_channels():
-    """Manage monitored channels"""
-    global telegram_monitor
-    
-    if request.method == 'GET':
-        # Load channels from config
-        try:
-            with open('monitor_config.json', 'r', encoding='utf-8') as f:
-                config = json.load(f)
-                return jsonify(config.get('channels', []))
-        except FileNotFoundError:
-            return jsonify([])
-    
-    elif request.method == 'POST':
-        # Add new channel
-        try:
-            username = request.json.get('username')
-            name = request.json.get('name', username)
-            
-            if not username:
-                return jsonify({'error': 'Username is required'}), 400
-            
-            # Load current config
-            try:
-                with open('monitor_config.json', 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-            except FileNotFoundError:
-                config = {"channels": [], "settings": {}}
-            
-            # Check if channel already exists
-            for channel in config['channels']:
-                if channel.get('username') == username:
-                    return jsonify({'error': 'Channel already exists'}), 400
-            
-            # Add new channel
-            new_channel = {
-                'username': username,
-                'name': name,
-                'enabled': True
-            }
-            config['channels'].append(new_channel)
-            
-            # Save config
-            with open('monitor_config.json', 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-            
-            return jsonify({'message': 'Channel added successfully', 'channel': new_channel})
-            
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-
-@app.route('/telegram/channels/<path:username>', methods=['DELETE'])
-def remove_channel(username):
-    """Remove monitored channel"""
-    try:
-        # Decode username from URL
-        import urllib.parse
-        decoded_username = urllib.parse.unquote(username)
-        
-        # Load current config
-        with open('monitor_config.json', 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        
-        # Remove channel - handle both URL and username formats
-        original_length = len(config['channels'])
-        config['channels'] = [ch for ch in config['channels'] if ch.get('username') != decoded_username]
-        
-        if len(config['channels']) == original_length:
-            return jsonify({'error': 'Channel not found'}), 404
-        
-        # Save config
-        with open('monitor_config.json', 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=2, ensure_ascii=False)
-        
-        return jsonify({'message': 'Channel removed successfully'})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup_user_session():
     """Cleanup user session data"""
     try:
-        user_id = session.get('user_id')
-        if user_id:
-            # Delete session from Redis
-            session_key = f"user_session:{user_id}"
-            redis_client.delete(session_key)
-        
         # Clear Flask session
         session.clear()
         
@@ -734,48 +544,13 @@ def cleanup_user_session():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def cleanup_old_sessions():
-    """Cleanup old user sessions from Redis"""
-    try:
-        # Get all session keys
-        session_keys = redis_client.keys("user_session:*")
-        
-        for key in session_keys:
-            try:
-                session_data = json.loads(redis_client.get(key))
-                last_accessed = datetime.fromisoformat(session_data.get('last_accessed', '1970-01-01T00:00:00'))
-                
-                # Delete sessions older than 24 hours
-                if datetime.now() - last_accessed > timedelta(hours=24):
-                    redis_client.delete(key)
-                    print(f"Cleaned up old session: {key}")
-                    
-            except Exception as e:
-                print(f"Error cleaning session {key}: {str(e)}")
-                
-    except Exception as e:
-        print(f"Error in cleanup_old_sessions: {str(e)}")
-
 if __name__ == '__main__':
     # Create directories
     os.makedirs('templates', exist_ok=True)
     
-    # Test Redis connection
-    if redis_client:
-        try:
-            redis_client.ping()
-            print("✅ Redis connection successful")
-            print("💾 Data stored in Redis - scalable and persistent")
-        except Exception as e:
-            print(f"⚠️ Redis connection failed: {str(e)}")
-            print("🔄 Using filesystem session storage as fallback")
-    else:
-        print("⚠️ Redis not configured")
-        print("🔄 Using filesystem session storage")
-    
-    print("🚀 Starting CyborX Redeem Tool Web App...")
-    print("🌐 Open your browser and go to: http://localhost:5000")
-    print("👥 Multi-user support enabled - each user has isolated session")
-    print("🔄 Session auto-expires after 24 hours")
+    print("[START] Starting CyborX Redeem Tool Web App...")
+    print("[URL] Open your browser and go to: http://localhost:5000")
+    print("[INFO] Simple mode - using filesystem session storage")
+    print("[INFO] Multi-user support enabled - each user has isolated session")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
