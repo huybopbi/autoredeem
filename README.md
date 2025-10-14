@@ -70,11 +70,20 @@ PHPSESSID=your_php_session_id
 autoredeem/
 ├── app.py                    # Main Flask application
 ├── redeem_tool.py           # Core redeem logic
+├── wsgi.py                  # WSGI entry point
 ├── templates/
 │   └── index.html          # Web interface
 ├── requirements.txt        # Python dependencies
 ├── codes.example.txt       # Example codes file
 ├── cookies.example.txt     # Example cookies file
+├── Procfile                # Railway deployment
+├── railway.json            # Railway configuration
+├── Dockerfile              # Docker configuration
+├── nixpacks.toml           # Railway build config
+├── cyborx-redeem.service   # Systemd service
+├── deploy.sh               # VPS deployment script
+├── VPS_DEPLOYMENT.md       # VPS deployment guide
+├── RAILWAY_DEPLOYMENT.md   # Railway deployment guide
 ├── .gitignore             # Git ignore rules
 ├── README.md              # This file
 └── LICENSE                # License file
@@ -164,15 +173,36 @@ The tool automatically detects successful redeems by:
 python app.py
 ```
 
-### Production Deployment
+### Railway Deployment (Free Hosting)
 ```bash
-# Using Gunicorn
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+# Method 1: Deploy from GitHub
+# 1. Fork this repository
+# 2. Go to https://railway.app
+# 3. Connect your GitHub repo
+# 4. Deploy automatically!
 
-# Using systemd service
-sudo systemctl start autoredeem
-sudo systemctl enable autoredeem
+# Method 2: Using Railway CLI
+npm install -g @railway/cli
+railway login
+railway up
+```
+
+### VPS Deployment
+```bash
+# Using deployment script
+chmod +x deploy.sh
+sudo ./deploy.sh
+
+# Using Gunicorn manually
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app
+```
+
+### Docker Deployment
+```bash
+# Build and run
+docker build -t cyborx-redeem .
+docker run -p 5000:5000 cyborx-redeem
 ```
 
 ### Environment Variables

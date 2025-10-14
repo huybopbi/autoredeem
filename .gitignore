@@ -60,6 +60,11 @@ session_data/
 !cyborx-redeem.service
 !deploy.sh
 !VPS_DEPLOYMENT.md
+!RAILWAY_DEPLOYMENT.md
+!Procfile
+!railway.json
+!Dockerfile
+!nixpacks.toml
 
 # Environment variables
 .env
