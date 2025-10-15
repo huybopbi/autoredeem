@@ -139,6 +139,23 @@
             border-color: #667eea;
             background: rgba(102, 126, 234, 0.1);
         }
+        .account-info-item {
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .account-info-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .badge {
+            font-size: 0.9em;
+            padding: 8px 12px;
+        }
+        .text-purple {
+            color: #6f42c1 !important;
+        }
     </style>
 </head>
 <body>
@@ -193,30 +210,62 @@
                 </div>
             </div>
 
+            <!-- Account Info Card -->
+            <div class="card mb-4" id="accountInfoCard" style="display: none;">
+                <div class="card-header">
+                    <h5><i class="fas fa-user-circle"></i> Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <div class="text-center account-info-item">
+                                <i class="fas fa-user fa-2x text-primary mb-2"></i>
+                                <h6>Username</h6>
+                                <span id="accountUsername" class="text-muted">Unknown</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center account-info-item">
+                                <i class="fas fa-crown fa-2x text-warning mb-2"></i>
+                                <h6>Account Type</h6>
+                                <span id="accountType" class="badge bg-secondary">Unknown</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-center account-info-item">
+                                <i class="fas fa-coins fa-2x text-success mb-2"></i>
+                                <h6>Credits</h6>
+                                <span id="accountCredits" class="text-muted">Unknown</span>
+                    </div>
+                    </div>
+                        <div class="col-md-2">
+                            <div class="text-center account-info-item">
+                                <i class="fas fa-gem fa-2x text-purple mb-2"></i>
+                                <h6>KCoin</h6>
+                                <span id="accountKCoin" class="text-muted">Unknown</span>
+                            </div>
+                            </div>
+                        <div class="col-md-2">
+                            <div class="text-center account-info-item">
+                                <i class="fas fa-dollar-sign fa-2x text-info mb-2"></i>
+                                <h6>XCoin</h6>
+                                <span id="accountXCoin" class="text-muted">Unknown</span>
+                            </div>
+                            </div>
+                        <div class="col-md-2">
+                            <div class="text-center account-info-item">
+                                <i class="fas fa-list-ol fa-2x text-info mb-2"></i>
+                                <h6>Number of Codes</h6>
+                                <span id="numberOfCodes" class="text-muted">0</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
                 <!-- Left Column - Configuration -->
                 <div class="col-md-6">
-                    <!-- Codes Upload -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-code"></i> Codes Configuration</h5>
-                        </div>
-                        <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Upload Codes File (.txt)</label>
-                                    <div class="file-upload" onclick="document.getElementById('codesFile').click()">
-                                        <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
-                                        <p>Click to upload or drag & drop</p>
-                                    <input type="file" id="codesFile" name="codes_file" accept=".txt" style="display: none;" onchange="handleFileUpload('codes')">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Or paste codes manually:</label>
-                                <textarea class="form-control" id="codesText" rows="4" placeholder="CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;CYBORX-9999-8888-PREMIUM"></textarea>
-                                </div>
-                        </div>
-                    </div>
-
                     <!-- Cookies Upload -->
                     <div class="card">
                         <div class="card-header">
@@ -233,7 +282,30 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Or paste cookies manually:</label>
-                                <textarea class="form-control" id="cookiesText" rows="3" placeholder="CYBORXSESSID=your_session_id_here"></textarea>
+                                <textarea class="form-control" id="cookiesText" rows="3" placeholder="CYBORXSESSID=your_session_id_here" onblur="autoGetAccountInfo()"></textarea>
+                                <small class="text-muted">Account info will be loaded automatically when you finish typing</small>
+                                </div>
+                        </div>
+                    </div>
+
+                    <!-- Codes Upload -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-code"></i> Codes Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Upload Codes File (.txt)</label>
+                                    <div class="file-upload" onclick="document.getElementById('codesFile').click()">
+                                        <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                        <p>Click to upload or drag & drop</p>
+                                    <input type="file" id="codesFile" name="codes_file" accept=".txt" style="display: none;" onchange="handleFileUpload('codes')">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Or paste codes manually:</label>
+                                <textarea class="form-control" id="codesText" rows="4" placeholder="CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;CYBORX-9999-8888-PREMIUM" onblur="updateCodeCount()"></textarea>
+                                <small class="text-muted">Number of codes will be counted automatically when you finish typing</small>
                                 </div>
                         </div>
                     </div>
@@ -689,6 +761,91 @@
             }
         }
 
+
+        // Update code count when user finishes typing codes
+        function updateCodeCount() {
+            const codesText = document.getElementById('codesText').value.trim();
+            
+            if (!codesText) {
+                document.getElementById('numberOfCodes').textContent = '0';
+                return;
+            }
+            
+            // Count non-empty lines
+            const lines = codesText.split('\n').filter(line => line.trim() !== '');
+            const codeCount = lines.length;
+            
+            document.getElementById('numberOfCodes').textContent = codeCount;
+        }
+
+        // Auto get account information when user finishes typing cookies
+        function autoGetAccountInfo() {
+            const cookiesText = document.getElementById('cookiesText').value.trim();
+            
+            if (!cookiesText) {
+                // Hide account info card if no cookies
+                document.getElementById('accountInfoCard').style.display = 'none';
+                return;
+            }
+            
+            // Show loading state in account info card
+            document.getElementById('accountUsername').textContent = 'Loading...';
+            document.getElementById('accountCredits').textContent = 'Loading...';
+            document.getElementById('accountKCoin').textContent = 'Loading...';
+            document.getElementById('accountXCoin').textContent = 'Loading...';
+            document.getElementById('accountType').textContent = 'Loading...';
+            document.getElementById('accountInfoCard').style.display = 'block';
+            
+            // Call API
+            fetch('/account-info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    cookies_text: cookiesText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    // Show error in account info
+                    document.getElementById('accountUsername').textContent = 'Error';
+                    document.getElementById('accountCredits').textContent = 'Error';
+                    document.getElementById('accountKCoin').textContent = 'Error';
+                    document.getElementById('accountXCoin').textContent = 'Error';
+                    document.getElementById('accountType').textContent = 'Error';
+                } else {
+                    // Update account info display
+                    document.getElementById('accountUsername').textContent = data.username || 'Unknown';
+                    document.getElementById('accountCredits').textContent = data.credits || 'Unknown';
+                    document.getElementById('accountKCoin').textContent = data.kcoin || 'Unknown';
+                    document.getElementById('accountXCoin').textContent = data.xcoin || 'Unknown';
+                    
+                    // Update account type with appropriate styling
+                    const accountTypeElement = document.getElementById('accountType');
+                    if (data.account_type === 'Premium') {
+                        accountTypeElement.textContent = 'Premium';
+                        accountTypeElement.className = 'badge bg-warning';
+                    } else if (data.account_type === 'Free') {
+                        accountTypeElement.textContent = 'Free';
+                        accountTypeElement.className = 'badge bg-secondary';
+                    } else {
+                        accountTypeElement.textContent = data.account_type || 'Unknown';
+                        accountTypeElement.className = 'badge bg-secondary';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Show error in account info
+                document.getElementById('accountUsername').textContent = 'Error';
+                document.getElementById('accountCredits').textContent = 'Error';
+                document.getElementById('accountKCoin').textContent = 'Error';
+                document.getElementById('accountXCoin').textContent = 'Error';
+                document.getElementById('accountType').textContent = 'Error';
+            });
+        }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {

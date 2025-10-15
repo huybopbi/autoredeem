@@ -150,10 +150,10 @@ class WebRedeemTool(CyborXRedeemTool):
                 is_success = "success" in response_text.lower() or "redeemed" in response_text.lower()
             
             result_data = {
-                'code': code,
+                    'code': code,
                 'status': 'success' if is_success else 'error',
-                'response': result['response'],
-                'timestamp': datetime.now().strftime('%H:%M:%S')
+                    'response': result['response'],
+                    'timestamp': datetime.now().strftime('%H:%M:%S')
             }
             
             self.user_session['task_results'].append(result_data)
@@ -164,12 +164,12 @@ class WebRedeemTool(CyborXRedeemTool):
                 self.user_session['task_status']['end_time'] = datetime.now().strftime('%H:%M:%S')
         elif self.user_session and not result:
             # Request failed
-            self.user_session['task_results'].append({
-                'code': code,
-                'status': 'error',
-                'response': 'Request failed',
-                'timestamp': datetime.now().strftime('%H:%M:%S')
-            })
+                self.user_session['task_results'].append({
+                    'code': code,
+                    'status': 'error',
+                    'response': 'Request failed',
+                    'timestamp': datetime.now().strftime('%H:%M:%S')
+                })
         
         return result
     
@@ -281,6 +281,181 @@ def ping():
     """Simple ping endpoint for healthcheck"""
     return "pong", 200
 
+@app.route('/account-info', methods=['POST'])
+def get_account_info():
+    """Get account information from cyborx.net dashboard"""
+    try:
+        data = request.get_json()
+        cookies_text = data.get('cookies_text', '')
+        
+        if not cookies_text.strip():
+            return jsonify({'error': 'No cookies provided'}), 400
+        
+        # Parse cookies
+        cookies = parse_cookies_from_text(cookies_text)
+        if not cookies:
+            return jsonify({'error': 'Invalid cookies format'}), 400
+        
+        # Create session with cookies
+        import requests
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'vi-VN,vi;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        })
+        session.cookies.update(cookies)
+        
+        # Get account info from cyborx.net dashboard
+        try:
+            print(f"[DEBUG] Making request to cyborx.net with cookies: {cookies}")
+            response = session.get('https://cyborx.net/app/dashboard', timeout=10)
+            print(f"[DEBUG] Response status: {response.status_code}")
+            if response.status_code == 200:
+                # Parse HTML to extract account info
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                account_info = {
+                    'status': 'success',
+                    'account_type': 'Unknown',
+                    'expiry_date': 'Unknown',
+                    'credits': 'Unknown',
+                    'kcoin': 'Unknown',
+                    'xcoin': 'Unknown',
+                    'username': 'Unknown'
+                }
+                
+                # Parse account information based on actual cyborx.net dashboard structure
+                
+                # Find username from the sidebar profile section
+                # Look for pattern like "Viettel Telecom PREMIUM @hatrangktvt"
+                profile_link = soup.find('a', href='/app/settings')
+                if profile_link:
+                    profile_text = profile_link.get_text()
+                    import re
+                    username_match = re.search(r'@(\w+)', profile_text)
+                    if username_match:
+                        account_info['username'] = username_match.group(1)
+                
+                # Find account type (PREMIUM/FREE) from sidebar
+                if profile_link:
+                    profile_text = profile_link.get_text()
+                    if 'PREMIUM' in profile_text.upper():
+                        account_info['account_type'] = 'Premium'
+                    else:
+                        account_info['account_type'] = 'Free'
+                
+                # Find credits - look for "Credits" label followed by number in main content
+                credits_elements = soup.find_all(string=lambda text: text and text.strip() == 'Credits')
+                for credits_element in credits_elements:
+                    parent = credits_element.parent
+                    if parent:
+                        # Look for the next sibling that contains the number
+                        next_sibling = parent.find_next_sibling()
+                        if next_sibling:
+                            credits_text = next_sibling.get_text().strip()
+                            if credits_text.isdigit():
+                                account_info['credits'] = credits_text
+                                break
+                
+                # Find KCoin
+                kcoin_elements = soup.find_all(string=lambda text: text and text.strip() == 'KCoin')
+                for kcoin_element in kcoin_elements:
+                    parent = kcoin_element.parent
+                    if parent:
+                        next_sibling = parent.find_next_sibling()
+                        if next_sibling:
+                            kcoin_text = next_sibling.get_text().strip()
+                            if kcoin_text.isdigit():
+                                account_info['kcoin'] = kcoin_text
+                                break
+                
+                # Find XCoin
+                xcoin_elements = soup.find_all(string=lambda text: text and text.strip() == 'XCoin')
+                for xcoin_element in xcoin_elements:
+                    parent = xcoin_element.parent
+                    if parent:
+                        next_sibling = parent.find_next_sibling()
+                        if next_sibling:
+                            xcoin_text = next_sibling.get_text().strip()
+                            # Remove $ sign if present
+                            xcoin_value = xcoin_text.replace('$', '').strip()
+                            if xcoin_value.isdigit():
+                                account_info['xcoin'] = xcoin_value
+                                break
+                
+                # Find expiry date - look for "Expiry Date" section
+                expiry_elements = soup.find_all(string=lambda text: text and text.strip() == 'Expiry Date')
+                print(f"[DEBUG] Found {len(expiry_elements)} Expiry Date elements")
+                for expiry_element in expiry_elements:
+                    parent = expiry_element.parent
+                    if parent:
+                        # Look for date in the same parent element or next sibling
+                        expiry_text = parent.get_text()
+                        print(f"[DEBUG] Expiry parent text: {expiry_text}")
+                        import re
+                        date_match = re.search(r'(\d{2}/\d{2}/\d{4})', expiry_text)
+                        if date_match:
+                            account_info['expiry_date'] = date_match.group(1)
+                            print(f"[DEBUG] Found expiry date: {date_match.group(1)}")
+                            break
+                        
+                        # Check next sibling
+                        next_sibling = parent.find_next_sibling()
+                        if next_sibling:
+                            expiry_text = next_sibling.get_text().strip()
+                            print(f"[DEBUG] Expiry next sibling text: {expiry_text}")
+                            date_match = re.search(r'(\d{2}/\d{2}/\d{4})', expiry_text)
+                            if date_match:
+                                account_info['expiry_date'] = date_match.group(1)
+                                print(f"[DEBUG] Found expiry date in sibling: {date_match.group(1)}")
+                                break
+                        
+                        # Look for div with class "k" that contains the date (nearby structure)
+                        # The date is in a <div class="k"> that's a sibling of the parent's parent
+                        grandparent = parent.parent
+                        if grandparent:
+                            # Look for next sibling of grandparent that contains div with class "k"
+                            grandparent_next = grandparent.find_next_sibling()
+                            if grandparent_next:
+                                date_div = grandparent_next.find('div', class_='k')
+                                if date_div:
+                                    date_text = date_div.get_text().strip()
+                                    print(f"[DEBUG] Found date div: {date_text}")
+                                    date_match = re.search(r'(\d{2}/\d{2}/\d{4})', date_text)
+                                    if date_match:
+                                        account_info['expiry_date'] = date_match.group(1)
+                                        print(f"[DEBUG] Found expiry date in date div: {date_match.group(1)}")
+                                        break
+                
+                # Alternative: Look for "Your plan will expire in X days" text
+                if account_info['expiry_date'] == 'Unknown':
+                    expire_text = soup.find(string=lambda text: text and 'expire in' in text.lower())
+                    if expire_text:
+                        import re
+                        days_match = re.search(r'expire in\s*(\d+)\s*days?', expire_text.lower())
+                        if days_match:
+                            from datetime import datetime, timedelta
+                            days = int(days_match.group(1))
+                            expiry_date = datetime.now() + timedelta(days=days)
+                            account_info['expiry_date'] = expiry_date.strftime('%d/%m/%Y')
+                
+                return jsonify(account_info)
+            else:
+                return jsonify({'error': f'Failed to fetch account info. Status: {response.status_code}'}), 400
+                
+        except requests.RequestException as e:
+            return jsonify({'error': f'Network error: {str(e)}'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Error parsing account info: {str(e)}'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
@@ -292,19 +467,8 @@ def health_check():
             'timestamp': datetime.now().isoformat()
         }
         
-        # Try Redis connection but don't fail if it's not available
-        if redis_client:
-            try:
-                redis_client.ping()
-                health_info['redis'] = 'connected'
-                health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
-            except Exception as redis_error:
-                health_info['redis'] = 'disconnected'
-                health_info['redis_error'] = str(redis_error)
-                health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
-        else:
-            health_info['redis'] = 'not_configured'
-            health_info['redis_url'] = os.getenv('REDIS_URL', 'Not set')
+        # Redis is not used in this simplified version
+        health_info['redis'] = 'not_used'
         
         return jsonify(health_info), 200
         
@@ -318,32 +482,6 @@ def health_check():
         
         return jsonify(error_info), 503
 
-@app.route('/health/redis')
-def health_check_redis():
-    """Redis-specific health check endpoint"""
-    try:
-        # Test Redis connection
-        redis_client.ping()
-        
-        redis_info = {
-            'status': 'healthy',
-            'redis': 'connected',
-            'redis_url': os.getenv('REDIS_URL', 'Not set'),
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        return jsonify(redis_info), 200
-        
-    except Exception as e:
-        error_info = {
-            'status': 'unhealthy',
-            'redis': 'disconnected',
-            'redis_url': os.getenv('REDIS_URL', 'Not set'),
-            'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        return jsonify(error_info), 503
 
 @app.route('/upload', methods=['POST'])
 def upload_files():

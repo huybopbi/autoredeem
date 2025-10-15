@@ -44,7 +44,7 @@ class CyborXRedeemTool:
         with self.lock:
             self.processed_count += 1
             remaining = self.total_codes - self.processed_count
-            print(f"📊 Progress: {self.processed_count}/{self.total_codes} | Remaining: {remaining}")
+            print(f"[PROGRESS] {self.processed_count}/{self.total_codes} | Remaining: {remaining}")
     
     def redeem_code(self, code, code_number):
         """Redeem một code cụ thể"""
@@ -54,7 +54,7 @@ class CyborXRedeemTool:
                 'code': code.strip()
             }
             
-            print(f"🔄 Processing ({code_number}/{self.total_codes}): {code}")
+            print(f"[PROCESSING] ({code_number}/{self.total_codes}): {code}")
             
             # Gửi request redeem
             response = self.session.post(
@@ -81,14 +81,14 @@ class CyborXRedeemTool:
                         new_status = data.get("new_status", "")
                         new_expiry = data.get("new_expiry", "")
                         
-                        print(f"✅ SUCCESS ({code_number}/{self.total_codes}): {code}")
-                        print(f"📡 Response: {response_text}")
+                        print(f"[SUCCESS] ({code_number}/{self.total_codes}): {code}")
+                        print(f"[RESPONSE] {response_text}")
                         if credits_added > 0:
-                            print(f"🎁 Credits added: {credits_added}")
+                            print(f"[CREDITS] Added: {credits_added}")
                         if new_status:
-                            print(f"👑 New status: {new_status}")
+                            print(f"[STATUS] New: {new_status}")
                         if new_expiry:
-                            print(f"📅 Expiry: {new_expiry}")
+                            print(f"[EXPIRY] {new_expiry}")
                         
                         with self.lock:
                             self.success_count += 1
@@ -96,38 +96,38 @@ class CyborXRedeemTool:
                     else:
                         # API trả về ok: false
                         error_msg = response_json.get("error", "Unknown error")
-                        print(f"❌ API ERROR ({code_number}/{self.total_codes}): {code}")
-                        print(f"📡 Response: {response_text}")
-                        print(f"🚫 Error: {error_msg}")
+                        print(f"[API ERROR] ({code_number}/{self.total_codes}): {code}")
+                        print(f"[RESPONSE] {response_text}")
+                        print(f"[ERROR] {error_msg}")
                         with self.lock:
                             self.error_count += 1
                             
                 except json.JSONDecodeError:
                     # Không phải JSON, fallback về logic cũ
                     if "success" in response_text.lower() or "redeemed" in response_text.lower():
-                        print(f"✅ SUCCESS ({code_number}/{self.total_codes}): {code}")
-                        print(f"📡 Response: {response_text}")
+                        print(f"[SUCCESS] ({code_number}/{self.total_codes}): {code}")
+                        print(f"[RESPONSE] {response_text}")
                         with self.lock:
                             self.success_count += 1
                             self.should_stop = True  # Dừng khi thành công
                     elif "not found" in response_text.lower():
-                        print(f"❌ NOT FOUND ({code_number}/{self.total_codes}): {code}")
-                        print(f"📡 Response: {response_text}")
+                        print(f"[NOT FOUND] ({code_number}/{self.total_codes}): {code}")
+                        print(f"[RESPONSE] {response_text}")
                         with self.lock:
                             self.error_count += 1
                     elif "already used" in response_text.lower() or "expired" in response_text.lower():
-                        print(f"⚠️  ALREADY USED/EXPIRED ({code_number}/{self.total_codes}): {code}")
-                        print(f"📡 Response: {response_text}")
+                        print(f"[ALREADY USED/EXPIRED] ({code_number}/{self.total_codes}): {code}")
+                        print(f"[RESPONSE] {response_text}")
                         with self.lock:
                             self.error_count += 1
                     else:
-                        print(f"❓ UNKNOWN ({code_number}/{self.total_codes}): {code}")
-                        print(f"📡 Response: {response_text}")
+                        print(f"[UNKNOWN] ({code_number}/{self.total_codes}): {code}")
+                        print(f"[RESPONSE] {response_text}")
                         with self.lock:
                             self.error_count += 1
             else:
-                print(f"❌ HTTP ERROR ({code_number}/{self.total_codes}): {code}")
-                print(f"📡 Status: {response.status_code}")
+                print(f"[HTTP ERROR] ({code_number}/{self.total_codes}): {code}")
+                print(f"[STATUS] {response.status_code}")
                 with self.lock:
                     self.error_count += 1
             
@@ -142,14 +142,14 @@ class CyborXRedeemTool:
             
         except requests.Timeout:
             self.update_progress()
-            print(f"⏰ TIMEOUT ({code_number}/{self.total_codes}): {code}")
+            print(f"[TIMEOUT] ({code_number}/{self.total_codes}): {code}")
             with self.lock:
                 self.error_count += 1
             return None
             
         except Exception as e:
             self.update_progress()
-            print(f"❌ ERROR ({code_number}/{self.total_codes}): {code} - {str(e)}")
+            print(f"[ERROR] ({code_number}/{self.total_codes}): {code} - {str(e)}")
             with self.lock:
                 self.error_count += 1
             return None
@@ -161,10 +161,10 @@ class CyborXRedeemTool:
                 codes = [line.strip() for line in f if line.strip() and not line.startswith('#')]
             return codes
         except FileNotFoundError:
-            print(f"❌ File {filename} not found!")
+            print(f"[ERROR] File {filename} not found!")
             return []
         except Exception as e:
-            print(f"❌ Error reading file {filename}: {str(e)}")
+            print(f"[ERROR] Reading file {filename}: {str(e)}")
             return []
     
     def load_cookies_from_file(self, filename='cookies.txt'):
@@ -193,10 +193,10 @@ class CyborXRedeemTool:
             return cookies
             
         except FileNotFoundError:
-            print(f"⚠️  File {filename} not found! Running without cookies...")
+            print(f"[WARNING] File {filename} not found! Running without cookies...")
             return {}
         except Exception as e:
-            print(f"❌ Error reading {filename}: {str(e)}")
+            print(f"[ERROR] Reading {filename}: {str(e)}")
             return {}
     
     def run_single_thread(self, codes):
@@ -204,16 +204,16 @@ class CyborXRedeemTool:
         self.total_codes = len(codes)
         self.should_stop = False  # Reset flag
         
-        print(f"✅ Loaded {self.total_codes} codes")
-        print(f"🧵 Mode: Single Thread")
-        print(f"⏰ Timeout: 30 seconds")
-        print("🚀 Starting redeem process...")
-        print("🛑 Will stop after first successful redeem")
+        print(f"[OK] Loaded {self.total_codes} codes")
+        print(f"[MODE] Single Thread")
+        print(f"[TIMEOUT] 30 seconds")
+        print("[START] Starting redeem process...")
+        print("[STOP] Will stop after first successful redeem")
         print("=" * 70)
         
         for i, code in enumerate(codes, 1):
             if self.should_stop:
-                print(f"🛑 Stopping after successful redeem at code {i-1}")
+                print(f"[STOP] Stopping after successful redeem at code {i-1}")
                 break
                 
             self.redeem_code(code, i)
@@ -224,11 +224,11 @@ class CyborXRedeemTool:
         self.total_codes = len(codes)
         self.should_stop = False  # Reset flag
         
-        print(f"✅ Loaded {self.total_codes} codes")
-        print(f"🧵 Mode: Multi-threaded ({max_workers} workers)")
-        print(f"⏰ Timeout: 30 seconds")
-        print("🚀 Starting multi-threaded redeem process...")
-        print("🛑 Will stop after first successful redeem")
+        print(f"[OK] Loaded {self.total_codes} codes")
+        print(f"[MODE] Multi-threaded ({max_workers} workers)")
+        print(f"[TIMEOUT] 30 seconds")
+        print("[START] Starting multi-threaded redeem process...")
+        print("[STOP] Will stop after first successful redeem")
         print("=" * 70)
         
         code_data = [(code, i+1) for i, code in enumerate(codes)]
@@ -238,7 +238,7 @@ class CyborXRedeemTool:
             
             for future in as_completed(futures):
                 if self.should_stop:
-                    print("🛑 Stopping after successful redeem")
+                    print("[STOP] Stopping after successful redeem")
                     # Cancel remaining futures
                     for f in futures:
                         f.cancel()
@@ -248,11 +248,11 @@ class CyborXRedeemTool:
     def print_summary(self):
         """In tóm tắt kết quả"""
         print("=" * 70)
-        print(f"📊 FINAL SUMMARY:")
-        print(f"✅ Successful: {self.success_count}/{self.total_codes}")
-        print(f"❌ Failed: {self.error_count}/{self.total_codes}")
-        print(f"📋 Total processed: {self.total_codes}")
-        print(f"🎯 Success rate: {(self.success_count/self.total_codes*100):.1f}%")
+        print(f"[SUMMARY] FINAL SUMMARY:")
+        print(f"[OK] Successful: {self.success_count}/{self.total_codes}")
+        print(f"[FAILED] {self.error_count}/{self.total_codes}")
+        print(f"[TOTAL] Processed: {self.total_codes}")
+        print(f"[RATE] Success rate: {(self.success_count/self.total_codes*100):.1f}%")
 
 def main():
     # Tạo tool instance
@@ -262,16 +262,16 @@ def main():
     cookies = tool.load_cookies_from_file('cookies.txt')
     if cookies:
         tool.session.cookies.update(cookies)
-        print(f"🍪 Loaded {len(cookies)} cookies from cookies.txt")
+        print(f"[COOKIES] Loaded {len(cookies)} cookies from cookies.txt")
     else:
-        print("⚠️  No cookies loaded - you may get 401 errors")
-        print("💡 Run 'python get_cookies.py' to get cookies from browser")
+        print("[WARNING] No cookies loaded - you may get 401 errors")
+        print("[INFO] Run 'python get_cookies.py' to get cookies from browser")
     
     # Đọc danh sách code từ file
     codes = tool.load_codes_from_file('codes.txt')
     
     if not codes:
-        print("❌ No codes found in codes.txt")
+        print("[ERROR] No codes found in codes.txt")
         return
     
     # Hỏi người dùng chọn chế độ
@@ -289,16 +289,16 @@ def main():
             max_workers = int(max_workers) if max_workers.isdigit() else 5
             tool.run_multi_thread(codes, max_workers)
         else:
-            print("❌ Lựa chọn không hợp lệ!")
+            print("[ERROR] Lựa chọn không hợp lệ!")
             return
             
         tool.print_summary()
         
     except KeyboardInterrupt:
-        print("\n⏹️  Process interrupted by user")
+        print("\n[STOP] Process interrupted by user")
         tool.print_summary()
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        print(f"[ERROR] {str(e)}")
 
 if __name__ == "__main__":
     main()
