@@ -498,7 +498,7 @@ def upload_files():
                 user_session['data']['codes'] = codes
                 user_session['data']['codes_text'] = codes_text
                 save_user_session(user_id, user_session)
-                flash(f'Codes file uploaded successfully! ({len(codes)} codes loaded)', 'success')
+                print(f'[INFO] Codes file uploaded successfully! ({len(codes)} codes loaded)')
         
         # Handle cookies file
         if 'cookies_file' in request.files:
@@ -509,7 +509,7 @@ def upload_files():
                 user_session['data']['cookies'] = cookies
                 user_session['data']['cookies_text'] = cookies_text
                 save_user_session(user_id, user_session)
-                flash(f'Cookies file uploaded successfully! ({len(cookies)} cookies loaded)', 'success')
+                print(f'[INFO] Cookies file uploaded successfully! ({len(cookies)} cookies loaded)')
         
         # Handle manual codes input
         if 'codes_text' in request.form and request.form['codes_text']:
@@ -518,7 +518,7 @@ def upload_files():
             user_session['data']['codes'] = codes
             user_session['data']['codes_text'] = codes_text
             save_user_session(user_id, user_session)
-            flash(f'Codes saved successfully! ({len(codes)} codes loaded)', 'success')
+            print(f'[INFO] Codes saved successfully! ({len(codes)} codes loaded)')
         
         # Handle manual cookies input
         if 'cookies_text' in request.form and request.form['cookies_text']:
@@ -527,7 +527,7 @@ def upload_files():
             user_session['data']['cookies'] = cookies
             user_session['data']['cookies_text'] = cookies_text
             save_user_session(user_id, user_session)
-            flash(f'Cookies saved successfully! ({len(cookies)} cookies loaded)', 'success')
+            print(f'[INFO] Cookies saved successfully! ({len(cookies)} cookies loaded)')
         
     except Exception as e:
         print(f"[ERROR] Upload error: {str(e)}")
