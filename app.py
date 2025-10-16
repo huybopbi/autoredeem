@@ -530,9 +530,10 @@ def upload_files():
             flash(f'Cookies saved successfully! ({len(cookies)} cookies loaded)', 'success')
         
     except Exception as e:
-        flash(f'Error uploading files: {str(e)}', 'error')
+        print(f"[ERROR] Upload error: {str(e)}")
+        return jsonify({'error': f'Error uploading files: {str(e)}'}), 500
     
-    return redirect(url_for('index'))
+    return jsonify({'success': True})
 
 @app.route('/start', methods=['POST'])
 def start_redeem():
@@ -714,8 +715,6 @@ if __name__ == '__main__':
     print(f"[INFO] Debug mode: {debug_mode}")
     print(f"[INFO] Environment: {os.environ.get('FLASK_ENV', 'development')}")
     
-    # Create session directory if it doesn't exist
-    session_dir = app.config['SESSION_FILE_DIR']
-    os.makedirs(session_dir, exist_ok=True)
+    # Memory session doesn't need directory creation
     
     app.run(debug=debug_mode, host=host, port=port)
