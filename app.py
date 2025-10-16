@@ -19,15 +19,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'cyborx_redeem_tool_2024_secure_key_for_multi_user')
 
 # Production-ready session configuration
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = os.environ.get('SESSION_DIR', '/tmp/flask_session')
+# Use memory session for Railway (non-persistent filesystem)
+app.config['SESSION_TYPE'] = 'memory'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'cyborx:'
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_FILE_THRESHOLD'] = 500
 
 Session(app)
 
@@ -710,7 +709,7 @@ if __name__ == '__main__':
     
     print("[START] Starting CyborX Redeem Tool Web App...")
     print(f"[URL] Open your browser and go to: http://{host}:{port}")
-    print("[INFO] Production mode - using filesystem session storage")
+    print("[INFO] Production mode - using memory session storage")
     print("[INFO] Multi-user support enabled - each user has isolated session")
     print(f"[INFO] Debug mode: {debug_mode}")
     print(f"[INFO] Environment: {os.environ.get('FLASK_ENV', 'development')}")
