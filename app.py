@@ -5,7 +5,7 @@ Flask web application for automatic code redemption
 """
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
-from flask_session import Session
+# from flask_session import Session  # Not needed for memory session
 import os
 import threading
 import time
@@ -18,17 +18,10 @@ from redeem_tool import CyborXRedeemTool
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'cyborx_redeem_tool_2024_secure_key_for_multi_user')
 
-# Production-ready session configuration
-# Use memory session for Railway (non-persistent filesystem)
-app.config['SESSION_TYPE'] = 'memory'
-app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_KEY_PREFIX'] = 'cyborx:'
+# Use Flask native session (memory-based)
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
-Session(app)
 
 # Global variables to store task data
 global_task_data = {}
@@ -710,7 +703,7 @@ if __name__ == '__main__':
     
     print("[START] Starting CyborX Redeem Tool Web App...")
     print(f"[URL] Open your browser and go to: http://{host}:{port}")
-    print("[INFO] Production mode - using memory session storage")
+    print("[INFO] Production mode - using Flask native session")
     print("[INFO] Multi-user support enabled - each user has isolated session")
     print(f"[INFO] Debug mode: {debug_mode}")
     print(f"[INFO] Environment: {os.environ.get('FLASK_ENV', 'development')}")

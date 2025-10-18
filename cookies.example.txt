@@ -1,7 +1,0 @@
-# CyborX Cookies Example
-# Paste your cookies here in the format: name=value
-# Get cookies from your browser's developer tools
-
-# CYBORXSESSID=your_session_id_here
-# PHPSESSID=your_php_session_id
-# Other cookies if needed
