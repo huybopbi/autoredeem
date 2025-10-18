@@ -277,8 +277,16 @@ def ping():
 def get_account_info():
     """Get account information from cyborx.net dashboard"""
     try:
+        print(f"[DEBUG] Account-info request received: {request.method}")
+        print(f"[DEBUG] Request form data: {dict(request.form)}")
+        print(f"[DEBUG] Request JSON: {request.get_json()}")
+        
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+            
         cookies_text = data.get('cookies_text', '')
+        print(f"[DEBUG] Cookies text length: {len(cookies_text)}")
         
         if not cookies_text.strip():
             return jsonify({'error': 'No cookies provided'}), 400
@@ -479,8 +487,13 @@ def health_check():
 def upload_files():
     """Handle file uploads"""
     try:
+        print(f"[DEBUG] Upload request received: {request.method}")
+        print(f"[DEBUG] Request form data: {dict(request.form)}")
+        print(f"[DEBUG] Request files: {list(request.files.keys())}")
+        
         user_session = get_user_session()
         user_id = session['user_id']
+        print(f"[DEBUG] User ID: {user_id}")
         
         # Handle codes file
         if 'codes_file' in request.files:
@@ -532,11 +545,16 @@ def upload_files():
 def start_redeem():
     """Start redeem process"""
     try:
+        print(f"[DEBUG] Start request received: {request.method}")
+        print(f"[DEBUG] Request form data: {dict(request.form)}")
+        print(f"[DEBUG] Request JSON: {request.get_json()}")
+        
         user_session = get_user_session()
         user_id = session['user_id']  # Get user_id from session
         
         print(f"[DEBUG] Starting redeem for user: {user_id}")
         print(f"[DEBUG] Task running: {user_session['task_status']['running']}")
+        print(f"[DEBUG] User session data: {user_session['data']}")
         
         if user_session['task_status']['running']:
             return jsonify({'error': 'Task is already running'}), 400
