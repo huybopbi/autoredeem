@@ -1,0 +1,166 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║         📦 CyborX Auto Redeem Tool - PHP Version Package 📦         ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📁 FILE: cyborx-redeem-php-version.zip
+📊 SIZE: 31KB (compressed) | 106KB (uncompressed)
+📅 DATE: October 21, 2024
+🔖 VERSION: 1.0.0
+👤 AUTHOR: huybopbi
+📜 LICENSE: MIT
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 CHECKSUMS (Verify file integrity):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MD5:    540acf98bbbe272f830d98b60e45df0e
+SHA256: 33ba431cb38dc95626e4549bfc33c4353f7355b8440ffc85c7e3ab15569d9e3a
+
+Verify after download:
+    md5sum cyborx-redeem-php-version.zip
+    sha256sum cyborx-redeem-php-version.zip
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 PACKAGE CONTENTS (22 files):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📂 php-version/
+   ├── 📂 public/
+   │   ├── 📄 index.php (11KB) - Main entry point
+   │   └── 📄 .htaccess (1KB) - URL rewriting
+   ├── 📂 src/
+   │   ├── 📄 CyborXRedeemTool.php (18KB) - Core class
+   │   └── 📄 helpers.php (5KB) - Helper functions
+   ├── 📂 config/
+   │   └── 📄 config.php (2KB) - Configuration
+   ├── 📂 templates/
+   │   └── 📄 index.html (33KB) - Web interface
+   ├── 📂 assets/ (empty folders for future use)
+   ├── 📄 composer.json (1KB) - Dependencies
+   ├── 📄 .htaccess (1KB) - Apache config
+   ├── 📄 README.md (9KB) - Full documentation
+   ├── 📄 codes.example.txt - Example codes
+   └── 📄 cookies.example.txt - Example cookies
+
+📄 INSTALLATION_GUIDE.md (10KB) - Detailed installation guide
+📄 DOWNLOAD_README.txt (13KB) - Quick start guide
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚡ QUICK START:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Unzip: unzip cyborx-redeem-php-version.zip
+2. Enter: cd php-version
+3. Run:   php -S localhost:8000 -t public
+4. Open:  http://localhost:8000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 REQUIREMENTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ PHP 7.4+ (recommended PHP 8.1+)
+✅ PHP Extensions: curl, json, session, mbstring
+✅ Web Server: Apache/Nginx or PHP built-in server
+✅ RAM: 128MB minimum (256MB+ recommended)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 FEATURES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Beautiful web interface with glass morphism design
+✅ Auto redeem codes from text or file upload
+✅ Real-time progress tracking and statistics
+✅ Session management with user isolation
+✅ Stop on success - auto stop after first successful redeem
+✅ Account info fetching - view account information
+✅ CSRF protection and security features
+✅ Responsive design - works on mobile
+✅ JSON response parsing
+✅ Multi-user support
+✅ 13 API endpoints
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 DOWNLOAD_README.txt - Quick start and overview
+📖 INSTALLATION_GUIDE.md - Detailed installation for all platforms
+📖 php-version/README.md - Full documentation and API reference
+📖 Inline comments - Code documentation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 DEPLOYMENT OPTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ PHP Built-in Server (Development)
+✅ Shared Hosting (cPanel, DirectAdmin)
+✅ VPS with Apache
+✅ VPS with Nginx
+✅ Docker Container
+✅ Docker Compose
+
+See INSTALLATION_GUIDE.md for detailed instructions.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 CODE STATISTICS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Files: 22
+Total Lines: ~2,500+ lines of code
+Languages: PHP, HTML, CSS, JavaScript
+Main Files:
+  - CyborXRedeemTool.php: 500+ lines
+  - index.html: 800+ lines
+  - index.php: 400+ lines
+  - helpers.php: 200+ lines
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔒 SECURITY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CSRF token protection
+✅ Input validation and sanitization
+✅ Cookie masking in UI
+✅ XSS protection headers
+✅ File upload security (max 1MB)
+✅ Secure error handling
+✅ Session isolation per user
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🆘 SUPPORT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 Report bugs: https://github.com/huybopbi/autoredeem/issues
+📖 Documentation: See included README files
+💬 Community: GitHub Discussions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  DISCLAIMER:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This tool is for educational purposes only.
+Use at your own risk.
+Ensure compliance with cyborx.net's terms of service.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Made with ❤️ by huybopbi
+GitHub: https://github.com/huybopbi
+License: MIT
+Version: 1.0.0
+Date: October 2024
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
