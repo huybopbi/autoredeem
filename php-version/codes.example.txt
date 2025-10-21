@@ -1,0 +1,10 @@
+# Example codes file for CyborX Redeem Tool
+# Add your codes below (one per line)
+# Remove the # symbol before codes to use them
+
+# CYBORX-1234-5678-PREMIUM
+# CYBORX-ABCD-EFGH-CREDITS  
+# CYBORX-9999-8888-PREMIUM
+
+# Format: CYBORX-XXXX-XXXX-TYPE
+# Types: PREMIUM, CREDITS, etc.

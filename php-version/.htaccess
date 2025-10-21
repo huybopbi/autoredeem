@@ -1,0 +1,35 @@
+RewriteEngine On
+
+# Redirect all traffic to public directory
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ /public/$1 [L]
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# File upload limits
+php_value upload_max_filesize 1M
+php_value post_max_size 2M
+php_value max_execution_time 300
+php_value memory_limit 128M
+
+# Hide PHP version
+Header unset X-Powered-By
+
+# Deny access to sensitive files
+<Files "composer.*">
+    Require all denied
+</Files>
+
+<Files "*.php">
+    <RequireAll>
+        Require all granted
+    </RequireAll>
+</Files>
+
+<FilesMatch "\.(log|txt)$">
+    Require all denied
+</FilesMatch>
