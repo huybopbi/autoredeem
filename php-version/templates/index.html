@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($app_name ?? 'CyborX Redeem Tool') ?> - PHP Version</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --dark-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --accent-color: #00d4ff;
+            --success-color: #00ff88;
+            --warning-color: #ffb800;
+            --error-color: #ff4757;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .main-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            margin: 20px auto;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header h1 {
+            background: linear-gradient(135deg, #ffffff 0%, #00d4ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            font-size: 3rem;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.2em;
+            font-weight: 400;
+        }
+
+        .card {
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .btn {
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #00cc66 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.5);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error-color) 0%, #cc3333 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.5);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-info:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffb800 0%, #ff8c00 100%);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(255, 184, 0, 0.3);
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 184, 0, 0.5);
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, var(--success-color) 0%, var(--accent-color) 100%);
+            border-radius: 20px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: var(--text-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+            outline: none;
+        }
+
+        .form-label {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .text-muted {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .result-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--accent-color);
+        }
+
+        .result-success::before {
+            background: var(--success-color);
+        }
+
+        .result-error::before {
+            background: var(--error-color);
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: var(--success-color);
+            color: #000;
+        }
+
+        .badge-error {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .version-badge {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-container {
+                margin: 10px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+                <div class="main-container">
+                    <!-- Header -->
+                    <div class="header">
+                        <h1><?= htmlspecialchars($app_name ?? 'CyborX Redeem Tool') ?> <span class="version-badge">PHP</span></h1>
+                        <p><i class="fas fa-gift me-2"></i>Automatic code redemption tool for cyborx.net</p>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="status-card d-none" id="status-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-2">
+                                    <i class="fas fa-cog fa-spin me-2" id="status-icon"></i>
+                                    <span id="status-text">Ready</span>
+                                </h5>
+                                <div class="progress mb-2">
+                                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                                </div>
+                                <small class="text-light" id="progress-text">0 / 0 codes processed</small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="stats-grid">
+                                    <div class="stat-card">
+                                        <div class="h4 mb-1 text-success" id="success-count">0</div>
+                                        <small>Success</small>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="h4 mb-1 text-danger" id="error-count">0</div>
+                                        <small>Errors</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Left Column - Upload -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <h5 class="card-title"><i class="fas fa-upload me-2"></i>Upload Data</h5>
+                                
+                                <!-- Codes Upload -->
+                                <div class="mb-4">
+                                    <label class="form-label">Codes</label>
+                                    <textarea class="form-control" id="codes-text" rows="6" 
+                                        placeholder="Enter codes (one per line):&#10;CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;..."></textarea>
+                                    <div class="mt-2">
+                                        <input type="file" class="form-control" id="codes-file" accept=".txt">
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <span id="codes-info">No codes loaded</span>
+                                    </small>
+                                </div>
+
+                                <!-- Cookies Upload -->
+                                <div class="mb-4">
+                                    <label class="form-label">Cookies</label>
+                                    <textarea class="form-control" id="cookies-text" rows="4" 
+                                        placeholder="Enter cookies:&#10;CYBORXSESSID=your_session_id&#10;PHPSESSID=your_php_session&#10;..."></textarea>
+                                    <div class="mt-2">
+                                        <input type="file" class="form-control" id="cookies-file" accept=".txt">
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <span id="cookies-info">No cookies loaded</span>
+                                    </small>
+                                </div>
+
+                                <!-- Upload Button -->
+                                <button class="btn btn-primary w-100" onclick="uploadData()">
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload Data
+                                </button>
+                            </div>
+
+                            <!-- Account Info Card -->
+                            <div class="card">
+                                <h5 class="card-title"><i class="fas fa-user me-2"></i>Account Info</h5>
+                                <button class="btn btn-info w-100 mb-3" onclick="getAccountInfo()">
+                                    <i class="fas fa-info-circle me-2"></i>Get Account Info
+                                </button>
+                                <div id="account-info" class="d-none">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">Username:</small>
+                                            <div id="account-username">-</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Account Type:</small>
+                                            <div id="account-type">-</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Credits:</small>
+                                            <div id="account-credits">-</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Expiry:</small>
+                                            <div id="account-expiry">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column - Control & Results -->
+                        <div class="col-md-6">
+                            <!-- Control Panel -->
+                            <div class="card">
+                                <h5 class="card-title"><i class="fas fa-play me-2"></i>Control Panel</h5>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Mode</label>
+                                    <select class="form-select" id="mode">
+                                        <option value="single">Single Thread (Stable)</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" id="start-btn" onclick="startRedeem()">
+                                        <i class="fas fa-play me-2"></i>Start Redeem
+                                    </button>
+                                    <button class="btn btn-danger d-none" id="stop-btn" onclick="stopRedeem()">
+                                        <i class="fas fa-stop me-2"></i>Stop Redeem
+                                    </button>
+                                    <button class="btn btn-warning" onclick="clearResults()">
+                                        <i class="fas fa-trash me-2"></i>Clear Results
+                                    </button>
+                                    <button class="btn btn-info" onclick="cleanupSession()">
+                                        <i class="fas fa-broom me-2"></i>Cleanup Session
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Results -->
+                            <div class="card">
+                                <h5 class="card-title">
+                                    <i class="fas fa-list me-2"></i>Results 
+                                    <span class="badge bg-secondary" id="results-count">0</span>
+                                </h5>
+                                <div id="results-container" style="max-height: 400px; overflow-y: auto;">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                                        <div>No results yet</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            CyborX Redeem Tool PHP v<?= htmlspecialchars($app_version ?? '1.0.0') ?> | 
+                            Made with <i class="fas fa-heart text-danger"></i> by 
+                            <a href="https://github.com/huybopbi" target="_blank" class="text-info">huybopbi</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let isRunning = false;
+        let statusInterval = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInfo();
+            startStatusPolling();
+        });
+
+        // Upload data
+        async function uploadData() {
+            const formData = new FormData();
+            
+            // Add text data
+            const codesText = document.getElementById('codes-text').value;
+            const cookiesText = document.getElementById('cookies-text').value;
+            
+            if (codesText) formData.append('codes_text', codesText);
+            if (cookiesText) formData.append('cookies_text', cookiesText);
+            
+            // Add files
+            const codesFile = document.getElementById('codes-file').files[0];
+            const cookiesFile = document.getElementById('cookies-file').files[0];
+            
+            if (codesFile) formData.append('codes_file', codesFile);
+            if (cookiesFile) formData.append('cookies_file', cookiesFile);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    showAlert('Data uploaded successfully!', 'success');
+                    loadInfo();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Upload failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'danger');
+            }
+        }
+
+        // Start redeem process
+        async function startRedeem() {
+            try {
+                const mode = document.getElementById('mode').value;
+                
+                const response = await fetch('/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mode: mode
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert(result.message, 'success');
+                    isRunning = true;
+                    updateUI();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Start failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'danger');
+            }
+        }
+
+        // Stop redeem process
+        async function stopRedeem() {
+            try {
+                const response = await fetch('/stop', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    showAlert('Stop signal sent', 'warning');
+                    isRunning = false;
+                    updateUI();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Stop failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'danger');
+            }
+        }
+
+        // Clear results
+        async function clearResults() {
+            try {
+                const response = await fetch('/clear', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    showAlert('Results cleared', 'info');
+                    loadResults();
+                    updateStatus();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Clear failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'danger');
+            }
+        }
+
+        // Cleanup session
+        async function cleanupSession() {
+            try {
+                const response = await fetch('/cleanup', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    showAlert('Session cleaned up', 'info');
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Cleanup failed', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'danger');
+            }
+        }
+
+        // Get account info
+        async function getAccountInfo() {
+            const cookiesText = document.getElementById('cookies-text').value;
+            
+            if (!cookiesText.trim()) {
+                showAlert('Please enter cookies first', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/account-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        cookies_text: cookiesText
+                    })
+                });
+                
+                if (response.ok) {
+                    const accountInfo = await response.json();
+                    displayAccountInfo(accountInfo);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Failed to get account info', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error: ' + error.message, 'danger');
+            }
+        }
+
+        // Display account info
+        function displayAccountInfo(info) {
+            document.getElementById('account-username').textContent = info.username || 'Unknown';
+            document.getElementById('account-type').textContent = info.account_type || 'Unknown';
+            document.getElementById('account-credits').textContent = info.credits || 'Unknown';
+            document.getElementById('account-expiry').textContent = info.expiry_date || 'Unknown';
+            document.getElementById('account-info').classList.remove('d-none');
+        }
+
+        // Load codes and cookies info
+        async function loadInfo() {
+            try {
+                // Load codes info
+                const codesResponse = await fetch('/codes');
+                if (codesResponse.ok) {
+                    const codesData = await codesResponse.json();
+                    document.getElementById('codes-info').textContent = 
+                        `${codesData.count} codes loaded from ${codesData.filename}`;
+                }
+
+                // Load cookies info
+                const cookiesResponse = await fetch('/cookies');
+                if (cookiesResponse.ok) {
+                    const cookiesData = await cookiesResponse.json();
+                    document.getElementById('cookies-info').textContent = 
+                        `${cookiesData.count} cookies loaded from ${cookiesData.filename}`;
+                }
+            } catch (error) {
+                console.error('Failed to load info:', error);
+            }
+        }
+
+        // Update status
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                if (response.ok) {
+                    const status = await response.json();
+                    
+                    isRunning = status.running;
+                    
+                    // Update progress
+                    const progressPercent = status.total > 0 ? (status.progress / status.total * 100) : 0;
+                    document.getElementById('progress-bar').style.width = progressPercent + '%';
+                    document.getElementById('progress-text').textContent = 
+                        `${status.progress} / ${status.total} codes processed`;
+                    
+                    // Update stats
+                    document.getElementById('success-count').textContent = status.success;
+                    document.getElementById('error-count').textContent = status.error;
+                    
+                    // Update status text
+                    if (status.running) {
+                        document.getElementById('status-text').textContent = 
+                            status.current_code ? `Processing: ${status.current_code}` : 'Running...';
+                    } else {
+                        document.getElementById('status-text').textContent = 
+                            status.progress > 0 ? 'Completed' : 'Ready';
+                    }
+                    
+                    // Show/hide status card
+                    if (status.progress > 0 || status.running) {
+                        document.getElementById('status-card').classList.remove('d-none');
+                    }
+                    
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+
+        // Load results
+        async function loadResults() {
+            try {
+                const response = await fetch('/results');
+                if (response.ok) {
+                    const results = await response.json();
+                    displayResults(results);
+                }
+            } catch (error) {
+                console.error('Failed to load results:', error);
+            }
+        }
+
+        // Display results
+        function displayResults(results) {
+            const container = document.getElementById('results-container');
+            document.getElementById('results-count').textContent = results.length;
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <div>No results yet</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = results.map(result => `
+                <div class="result-item result-${result.status}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${escapeHtml(result.code)}</div>
+                            <small class="text-muted">${escapeHtml(result.response)}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge badge-${result.status}">${result.status}</span>
+                            <br>
+                            <small class="text-muted">${result.timestamp}</small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update UI state
+        function updateUI() {
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            
+            if (isRunning) {
+                startBtn.classList.add('d-none');
+                stopBtn.classList.remove('d-none');
+            } else {
+                startBtn.classList.remove('d-none');
+                stopBtn.classList.add('d-none');
+            }
+        }
+
+        // Start status polling
+        function startStatusPolling() {
+            updateStatus();
+            loadResults();
+            
+            statusInterval = setInterval(() => {
+                updateStatus();
+                loadResults();
+            }, 2000);
+        }
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.main-container').insertBefore(alert, document.querySelector('.row'));
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle file uploads
+        document.getElementById('codes-file').addEventListener('change', function() {
+            if (this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('codes-text').value = e.target.result;
+                };
+                reader.readAsText(this.files[0]);
+            }
+        });
+
+        document.getElementById('cookies-file').addEventListener('change', function() {
+            if (this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('cookies-text').value = e.target.result;
+                };
+                reader.readAsText(this.files[0]);
+            }
+        });
+    </script>
+</body>
+</html>

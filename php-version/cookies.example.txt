@@ -1,0 +1,12 @@
+# Example cookies file for CyborX Redeem Tool
+# Add your cookies below
+# Remove the # symbol before cookies to use them
+
+# CYBORXSESSID=your_session_id_here
+# PHPSESSID=your_php_session_id
+
+# To get cookies:
+# 1. Login to cyborx.net
+# 2. Open browser DevTools (F12)
+# 3. Go to Application/Storage > Cookies
+# 4. Copy CYBORXSESSID and other relevant cookies
