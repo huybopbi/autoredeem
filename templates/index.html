@@ -337,6 +337,17 @@
             color: var(--text-primary);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
+            width: 100%;
+            display: block;
+        }
+        
+        /* Force textarea visibility on all devices */
+        textarea.form-control {
+            min-height: 80px;
+            resize: vertical;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .form-control::placeholder, .form-select::placeholder {
