@@ -1,0 +1,26 @@
+[Unit]
+Description=CyborX Auto Redeem Tool - uWSGI Service
+After=network.target
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/autoredeem
+Environment="PATH=/path/to/venv/bin"
+ExecStart=/path/to/venv/bin/uwsgi --ini /path/to/autoredeem/uwsgi.ini
+Restart=always
+RestartSec=10
+KillSignal=SIGQUIT
+StandardOutput=journal
+StandardError=journal
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Performance
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
