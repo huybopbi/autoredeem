@@ -337,6 +337,17 @@
             color: var(--text-primary);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
+            width: 100%;
+            display: block;
+        }
+        
+        /* Force textarea visibility on all devices */
+        textarea.form-control {
+            min-height: 80px;
+            resize: vertical;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .form-control::placeholder, .form-select::placeholder {
@@ -728,8 +739,8 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Or paste cookies manually:</label>
-                                <textarea class="form-control" id="cookiesText" rows="3" placeholder="CYBORXSESSID=your_session_id_here" onblur="autoGetAccountInfo()"></textarea>
-                                <small class="text-muted">Account info will be loaded automatically when you finish typing</small>
+                                    <textarea class="form-control" id="cookiesText" rows="3" placeholder="CYBORXSESSID=your_session_id_here" onblur="autoGetAccountInfo()"></textarea>
+                                    <small class="text-muted">Account info will be loaded automatically when you finish typing</small>
                                 </div>
                         </div>
                     </div>
@@ -750,8 +761,8 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Or paste codes manually:</label>
-                                <textarea class="form-control" id="codesText" rows="4" placeholder="CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;CYBORX-9999-8888-PREMIUM" onblur="updateCodeCount()"></textarea>
-                                <small class="text-muted">Number of codes will be counted automatically when you finish typing</small>
+                                    <textarea class="form-control" id="codesText" rows="4" placeholder="CYBORX-1234-5678-PREMIUM&#10;CYBORX-ABCD-EFGH-CREDITS&#10;CYBORX-9999-8888-PREMIUM" onblur="updateCodeCount()"></textarea>
+                                    <small class="text-muted">Number of codes will be counted automatically when you finish typing</small>
                                 </div>
                         </div>
                     </div>
