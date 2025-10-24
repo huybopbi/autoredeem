@@ -700,12 +700,49 @@ def clear_results():
 
 @app.route('/cleanup', methods=['POST'])
 def cleanup_user_session():
-    """Cleanup user session data"""
+    """Cleanup user session data and create fresh session"""
     try:
-        # Clear Flask session
+        # Get old user_id before clearing (for logging)
+        old_user_id = session.get('user_id', 'unknown')
+        
+        # Clear ALL session data completely
         session.clear()
         
-        return jsonify({'message': 'Session cleaned up successfully!'})
+        # Generate NEW user_id for fresh session
+        new_user_id = str(uuid.uuid4())
+        session['user_id'] = new_user_id
+        session.permanent = True
+        
+        # Initialize fresh session data
+        session['user_data'] = {
+            'task_results': [],
+            'task_status': {
+                'running': False,
+                'progress': 0,
+                'total': 0,
+                'success': 0,
+                'error': 0,
+                'current_code': '',
+                'start_time': None,
+                'end_time': None
+            },
+            'data': {
+                'codes': [],
+                'codes_text': '',
+                'cookies': {},
+                'cookies_text': ''
+            }
+        }
+        
+        # Force session modification to save
+        session.modified = True
+        
+        print(f"[CLEANUP] Session cleaned: {old_user_id} -> {new_user_id}")
+        
+        return jsonify({
+            'message': 'Session cleaned up successfully!',
+            'new_session': True
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
