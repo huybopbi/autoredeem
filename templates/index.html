@@ -1207,8 +1207,27 @@
                     if (data.error) {
                         alert('Error: ' + data.error);
                     } else {
-                        alert('Session cleaned up successfully!');
-                        location.reload(); // Reload page to start fresh
+                        // Clear all UI fields immediately
+                        document.getElementById('cookiesText').value = '';
+                        document.getElementById('codesText').value = '';
+                        
+                        // Clear results
+                        document.getElementById('results-container').innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <div>No results yet</div>
+                            </div>
+                        `;
+                        
+                        // Hide status card
+                        document.getElementById('status-card').classList.add('d-none');
+                        
+                        alert('Session cleaned up successfully! Page will reload.');
+                        
+                        // Force hard reload to clear all cache and session
+                        setTimeout(() => {
+                            window.location.href = window.location.href + '?refresh=' + new Date().getTime();
+                        }, 500);
                     }
                 })
                 .catch(error => {
